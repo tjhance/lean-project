@@ -34,6 +34,7 @@ def finset_n_choose_k (n : ℕ) (k : ℕ) : finset (list bool) :=
 
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
+            ∧ list.nodup l
 
 theorem card_split
     {α : Type} (A : set α) (B : set α) (C : set α) (b : ℕ) (c : ℕ) :
