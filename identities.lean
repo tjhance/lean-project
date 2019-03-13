@@ -4,8 +4,6 @@ import data.set.finite
 import data.multiset
 import data.list
 
-open list
-
 #check set
 #check finset ℕ 
 #check @finset.mk
@@ -33,7 +31,7 @@ def finset_n_choose_k (n : ℕ) (k : ℕ) : finset (list bool) :=
 -/
 
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
-    ∃ l : (list α) , length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
+    ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
 
 def count_tt : (list bool) -> ℕ
     | [] := 0
@@ -41,20 +39,28 @@ def count_tt : (list bool) -> ℕ
     | (tt :: l) := count_tt l + 1
 
 def set_n_choose_k (n : ℕ) (k : ℕ) : set (list bool) :=
-    { l : list bool | length l = n ∧ count_tt l = k }
+    { l : list bool | list.length l = n ∧ count_tt l = k }
 
 def all_ff : (ℕ) → (list bool)
 | 0 := []
 | (n + 1) := ff :: (all_ff n)
 
 theorem is_all_ff : ∀ x : (list bool) ,
-    count_tt x = 0 -> x = all_ff (length x) := sorry
+    count_tt x = 0 -> x = all_ff (list.length x) := sorry
     
 theorem length_all_ff : ∀ n : ℕ ,
-    length (all_ff n) = n := sorry
+    list.length (all_ff n) = n := sorry
 
 theorem count_tt_all_ff : ∀ n : ℕ ,
-    count_tt (all_ff n) = 0 := sorry
+    count_tt (all_ff n) = 0
+    | 0 := 
+        begin 
+            simp[count_tt, all_ff, refl]
+        end
+    | (n+1) := 
+        begin
+            sorry
+        end
 
 theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
     has_card (set_n_choose_k n k) (choose n k)
@@ -89,7 +95,7 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
         intros ,
         simp ,
         cases a ,
-        have h : (x = nil) ,
+        have h : (x = list.nil) ,
         cases x , trivial, trivial ,
         subst x at a_right , simp [count_tt] at a_right , trivial ,
         simp ,
