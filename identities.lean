@@ -31,7 +31,7 @@ def finset_n_choose_k (n : ℕ) (k : ℕ) : finset (list bool) :=
 -/
 
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
-    ∃ l : (list α) , length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
+    ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
 
 theorem card_split
@@ -70,14 +70,13 @@ theorem is_all_ff : ∀ x : (list bool) ,
     count_tt x = 0 -> x = all_ff (list.length x) := sorry
     
 theorem length_all_ff : ∀ n : ℕ ,
-    list.length (all_ff n) = n := sorry
+    list.length (all_ff n) = n
+    | 0 := by simp[all_ff, refl]
+    | (n + 1) := by simp[all_ff, list.length_cons, length_all_ff n]
 
 theorem count_tt_all_ff : ∀ n : ℕ ,
     count_tt (all_ff n) = 0
-    | 0 := 
-        begin 
-            simp[count_tt, all_ff, refl]
-        end
+    | 0 := by simp[count_tt, all_ff, refl]
     | (n+1) := 
         begin
             calc
