@@ -80,7 +80,10 @@ theorem count_tt_all_ff : ∀ n : ℕ ,
         end
     | (n+1) := 
         begin
-            sorry
+            calc
+            count_tt (all_ff (n + 1)) = count_tt (ff:: (all_ff n)): by simp[all_ff]
+                                ... = count_tt(all_ff n): by simp[count_tt]
+                                ... = 0: by simp[count_tt_all_ff n]
         end
 
 theorem eq_of_add_1 : ∀ n : ℕ , ∀ m : ℕ ,
