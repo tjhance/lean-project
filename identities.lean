@@ -37,8 +37,8 @@ def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
 
 def count_tt : (list bool) -> ℕ
     | [] := 0
-    | (ff :: l) := count_trues l
-    | (tt :: l) := count_trues l + 1
+    | (ff :: l) := count_tt l
+    | (tt :: l) := count_tt l + 1
 
 def set_n_choose_k (n : ℕ) (k : ℕ) : set (list bool) :=
     { l : list bool | length l = n ∧ count_tt l = k }
@@ -46,6 +46,15 @@ def set_n_choose_k (n : ℕ) (k : ℕ) : set (list bool) :=
 def all_ff : (ℕ) → (list bool)
 | 0 := []
 | (n + 1) := ff :: (all_ff n)
+
+theorem is_all_ff : ∀ x : (list bool) ,
+    count_tt x = 0 -> x = all_ff (length x) := sorry
+    
+theorem length_all_ff : ∀ n : ℕ ,
+    length (all_ff n) = n := sorry
+
+theorem count_tt_all_ff : ∀ n : ℕ ,
+    count_tt (all_ff n) = 0 := sorry
 
 theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
     has_card (set_n_choose_k n k) (choose n k)
@@ -60,27 +69,16 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
         intros ,
         cases a ,
         simp ,
-    end
-    /-
-    begin
-        rw has_card ,
-        existsi ([[]]) ,
-        split ,
-        simp ,
-        intros ,
-        split ,
-        intros ,
-        simp [set_n_choose_k] at a ,
-        cases a ,
-        simp ,
-        cases x , trivial , trivial ,
+        subst n ,
+        apply is_all_ff , assumption ,
         intros ,
         simp at a ,
-        simp [set_n_choose_k] ,
-        subst x , 
-        split , refl , refl ,
+        simp ,
+        subst x ,
+        split ,
+        apply length_all_ff ,
+        apply count_tt_all_ff ,
     end
-    -/
 | 0 (k + 1) :=
     begin
         simp [has_card, set_n_choose_k] ,
