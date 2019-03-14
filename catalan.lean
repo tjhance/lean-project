@@ -31,10 +31,6 @@ theorem catalan_recurrence : ∀ n ,
     catalan (n+1) = sum_to (n+1) (λ i , catalan i * catalan (n - i)) :=
     sorry
 
-theorem balanced_recursor : ∀ (l : list bool) ,
-    balanced l ↔ (∃ a b , balanced a ∧ balanced b ∧ l = tt :: a ++ ff :: b) :=
-    sorry
-
 /- split (A)B into A, B -/
 def split_parens_aux : (list bool) → (ℕ) → (list bool × list bool)
 | ([]) n := ([],[])
@@ -111,7 +107,7 @@ begin
             ... = 2 * n
                 : (begin
                     rw a_left,
-                    exact sorry ,
+                    rw mul_add , simp ,
                   end)
             ... < 2 * (n + 1)
                 : by linarith
@@ -216,7 +212,10 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
         clear e ,
         have e : (sum_to (n + 1) = sum_to j) , rw j'_h, rw e , clear e,
         have n_bound : (n+1) < (bound+1) := a , /- copy this -/
-        have j_bound : j ≤ (n+1) := sorry ,
+        have j_bound : j ≤ (n+1) := 
+            begin
+                subst j , 
+            end ,
         clear a , clear j'_h ,
 
         /- do induction on j for the summation of the recursion -/
@@ -231,7 +230,9 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
             apply catalan_set_induction ,
             {
                 apply j_ih ,
-                calc j_n ≤ n + 1 : sorry , /- should be easy -/
+                calc j_n ≤ j_n + 1 : by linarith
+                ... = nat.succ j_n : by refl 
+                ... ≤ n + 1 : by assumption
             },
             {
                 clear j_ih ,
@@ -250,7 +251,10 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                      split ,
                      rw [combine_parens] , simp , rw a , rw a_2 ,
                      {
-                        calc 1 + (1 + (2 * j_n + 2 * (n - j_n))) = 2 * (n + 1) : sorry
+                        calc 1 + (1 + (2 * j_n + 2 * (n - j_n))) = 2 * (n + 1) : begin
+                            rw [mul_add] ,
+                            exact sorry
+                        end
                      },
                      {
                          split,
@@ -397,7 +401,14 @@ theorem int_of_nat_add : ∀ (a:ℕ) (b:ℕ) ,
     int.of_nat (a + b) = int.of_nat a + int.of_nat b := sorry
 
 theorem int_of_nat_sub : ∀ (a:ℕ) (b:ℕ) ,
+    b ≤ a →
     int.of_nat (a - b) = int.of_nat a - int.of_nat b := sorry
+
+theorem int_of_nat_mul : ∀ (a:ℕ) (b:ℕ) ,
+    int.of_nat (a * b) = int.of_nat a * int.of_nat b := sorry
+
+theorem mul_int_of_nat_1 : ∀ (a:ℤ) ,
+    a * (int.of_nat 1) = a := sorry
 
 theorem below_diagonal_path_rotate_best_point : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2*n + 1 →
@@ -483,17 +494,23 @@ begin
                     linarith ,
                 end
             ... =
-            (int.of_nat n * int.of_nat (p + i - n) - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take (p + i - (2*n+1)) l))) -
+            (int.of_nat n * int.of_nat (p + i - (2*n+1)) - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take (p + i - (2*n+1)) l))) -
             (int.of_nat n * int.of_nat p - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take p l))) :
                 begin
                     clear ineq,
                     rw a_1 ,
-                    simp [add_mul, int_of_nat_add, mul_add, int_of_nat_sub] ,
-                    rw [@nat.add_comm (int.of_nat n) (int.of_nat i)],
-                    
+                    rw int_of_nat_sub ,
+                    simp [add_mul, int_of_nat_add, mul_add, mul_int_of_nat_1, int_of_nat_mul] ,
+                    rw [int.mul_comm] ,
+                    simp ,
+                    rw (@int.mul_comm (int.of_nat n) (int.of_nat 2 * int.of_nat n)),
+                    refl,
+                    linarith ,
                 end
-            ... ≤ 0 : sorry
-        
+            ... ≤ 0 :
+                begin
+                    linarith ,
+                end
         }
     }
 
