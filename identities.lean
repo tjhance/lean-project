@@ -9,27 +9,6 @@ import data.list
 #check @finset.mk
 #check choose 5 4
 
-/-
-#check finset.mk (multiset.zero) multiset.nodup_zero
-
-def zero_finset := finset.mk (@multiset.zero ℕ) multiset.nodup_zero
-
-#eval finset.card zero_finset
-
-def finset_is {α : Type} (s : finset α) (m : α → Prop) : Prop :=
-    ∀ x : α , (x ∈ s) ↔ m x
-
-def list_n_choose_k : (ℕ) -> (ℕ) -> list (list bool)
-| 0 0 := [[]]
-| 0 k := []
-| n k := 
-    list.map (λ l , true :: l) (list_n_choose_k (n-1)) ++
-    list.map (λ l , true :: l) (list_n_choose_k (n-1))
-
-def finset_n_choose_k (n : ℕ) (k : ℕ) : finset (list bool) :=
-    finset.mk (h)
--/
-
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
@@ -53,6 +32,27 @@ theorem card_split_map
     has_card B b ->
     has_card C c ->
     has_card A (b+c) := sorry
+
+theorem card_0
+    {α : Type} (A : set α) :
+    (∀ (y:α) , y ∈ A → false) →
+    has_card A 0 := sorry
+
+theorem card_1
+    {α : Type} (A : set α) (x : α) :
+    (x ∈ A) →
+    (∀ (y:α) , y ∈ A → x = y) →
+    has_card A 1 := sorry
+
+theorem card_product
+    {α : Type} {β : Type} {γ : Type}
+        (A : set α) (B : set β) (C : set γ) (a : ℕ) (b : ℕ)
+        (f : α → β → γ) :
+    (∀ z , z ∈ C → ∃ x y , f x y = z) → 
+    (∀ x y x' y' , f x y = f x' y' → x = x' ∧ y = y') →
+    has_card A a →
+    has_card B b →
+    has_card C (a * b) := sorry 
 
 def count_tt : (list bool) -> ℕ
     | [] := 0
