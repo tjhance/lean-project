@@ -318,9 +318,9 @@ def count_tt_prefix : ℕ → (list bool) -> ℕ
 def below_diagonal_path (n : ℕ) (l : list bool) :=
     list.length l = 2*n + 1 ∧
     count_tt l = n ∧
-    (forall (i:ℕ) , 0 ≤ i → i ≤ (2*n + 1) →
+    (forall (i:ℕ) , i ≤ (2*n + 1) →
         ((int.of_nat i) * (int.of_nat n) -
-            (2*(int.of_nat n)+1) * (int.of_nat count_tt (list.take i l)) < 0))
+            (2*(int.of_nat n)+1) * (int.of_nat (count_tt (list.take i l))) ≤ 0))
 
 def argmax : (ℕ → ℤ) → ℕ → ℕ
     | f 0 := 0
@@ -391,11 +391,76 @@ theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
 theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
     (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
 
+theorem eq_of_le_zero : ∀ (a:ℤ) (b:ℤ) ,
+    a ≤ 0 → b ≤ 0 → (a+b) = 0 → a = 0 := sorry
+
 theorem below_diagonal_rotation_is_0 : ∀ (n : ℕ) (l : list bool) (i : ℕ) ,
     i < (2*n + 1) →
     below_diagonal_path n l →
     below_diagonal_path n (list.drop i l ++ list.take i l) →
-    i = 0 := sorry
+    i = 0 :=
+begin
+    intros ,
+    rw [below_diagonal_path] at * ,
+    cases a_1 ,
+    cases a_1_right ,
+    cases a_2 ,
+    cases a_2_right ,
+    have h1 := a_1_right_right i (begin
+        apply le_of_lt , assumption ,
+    end),
+    have h2 := a_2_right_right ((2*n + 1) - i) (begin
+        exact sorry /- should be easy -/
+    end),
+    clear a_1_right_right , clear a_2_right_right ,
+
+    have f := (
+        calc list.length (list.drop i l) = (list.length l - i) : sorry
+         ... = 2*n + 1 - i : sorry
+    ),
+    have e : ((list.take (2 * n + 1 - i) (list.drop i l ++ list.take i l))
+        = list.drop i l) :=
+        begin
+            rw <- f ,
+            apply take_app ,
+        end,
+    rw e at h2 ,
+    have g := (calc
+        int.of_nat (count_tt (list.drop i l)) = 
+            int.of_nat (count_tt (list.take i l)) +
+            int.of_nat (count_tt (list.drop i l)) -
+            int.of_nat (count_tt (list.take i l)) : sorry
+        ... = int.of_nat (count_tt (list.take i l) + count_tt (list.drop i l)) -
+              int.of_nat (count_tt (list.take i l)) : sorry
+        ... = int.of_nat (count_tt (list.take i l ++ list.drop i l)) -
+              int.of_nat (count_tt (list.take i l)) : sorry
+        ... = int.of_nat (count_tt l) -
+              int.of_nat (count_tt (list.take i l)) : sorry
+        ... = int.of_nat n - int.of_nat (count_tt (list.take i l)) : sorry
+    ),
+    rw g at h2 ,
+
+    /- replace int.of_nat (count_tt (list.take i l)) with x -/
+    have j' : (∃ j , j = (count_tt (list.take i l))) , existsi (count_tt (list.take i l)), trivial, cases j', rename j'_w x ,
+    rw <- j'_h at * ,
+
+    have sum_eq_z := (calc
+    (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x) +
+    (int.of_nat (2 * n + 1 - i) * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat n - int.of_nat x)) = 0 : sorry),
+
+    have eq_z := (eq_of_le_zero 
+        (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x)
+    (int.of_nat (2 * n + 1 - i) * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat n - int.of_nat x)) h1 h2 sum_eq_z) ,
+
+    have t := (calc
+        i * n = (2*n+1) * x : sorry
+    ),
+    have gcd1 : (nat.gcd n (2*n+1) = 1) := sorry,
+    have div1 : (2*n + 1) ∣ (i * n) := sorry,
+    have div2 : (2*n + 1) ∣ i := sorry,
+    have i_eq_0 : (i = 0) := sorry,
+    assumption ,
+end
 
 theorem below_diagonal_rotations_eq : ∀ (n : ℕ) (l : list bool) (l' : list bool) (i : ℕ) (i' : ℕ) ,
     below_diagonal_path n l →
