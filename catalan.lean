@@ -319,7 +319,62 @@ def below_diagonal_path (n : ℕ) (l : list bool) :=
     list.length l = 2*n + 1 ∧
     count_tt l = n ∧
     (forall (i:ℕ) , 0 ≤ i → i ≤ (2*n + 1) →
-        (i * n < (2*n+1) * count_tt (list.take i l)))
+        ((int.of_nat i) * (int.of_nat n) -
+            (2*(int.of_nat n)+1) * (int.of_nat count_tt (list.take i l)) < 0))
+
+def argmax : (ℕ → ℤ) → ℕ → ℕ
+    | f 0 := 0
+    | f (n+1) := if f (n+1) > f (argmax f n) then (n+1) else argmax f n
+
+def best_point (n:ℕ) (l : list bool) :=
+    argmax (λ i ,
+        (int.of_nat n) * (int.of_nat i) -
+            (2*(int.of_nat n) + 1) * (int.of_nat (count_tt (list.take i l)))
+    ) (2*n)
+
+def negate_rotation (n:ℕ) (i:ℕ) :=
+    if i = 0 then 0 else n - i
+
+def compose_rotation (n:ℕ) (i:ℕ) (j:ℕ) :=
+    (i + j) % n
+
+theorem negate_rotation_lt : ∀ (n:ℕ) (i:ℕ) ,
+    0 < n → negate_rotation n i < n := sorry
+
+theorem compose_rotation_lt : ∀ (n:ℕ) (i:ℕ) (j:ℕ) ,
+    0 < n → compose_rotation n i j < n := sorry
+
+theorem eq_0_of_compose_negate : ∀ (n:ℕ) (i:ℕ) (j:ℕ) ,
+    i < n →
+    j < n → 
+    compose_rotation n (negate_rotation n i) j = 0 →
+    i = j := sorry
+
+theorem compose_compose_rotation {α : Type} : ∀ (l:list α) (i:ℕ) (j:ℕ) ,
+    i < list.length l → 
+    list.drop i
+        (list.drop j l ++ list.take j l) ++
+      list.take i
+        (list.drop j l ++ list.take j l) =
+    list.drop (compose_rotation (list.length l) i j) l ++
+    list.take (compose_rotation (list.length l) i j) l := sorry
+
+theorem negate_negate_rotation {α : Type} : ∀ (l:list α) (i:ℕ) ,
+    i < list.length l → 
+    list.drop (negate_rotation (list.length l) i)
+        (list.drop i l ++ list.take i l) ++
+      list.take (negate_rotation (list.length l) i)
+        (list.drop i l ++ list.take i l) =
+    l := sorry
+
+theorem best_point_lt_length : ∀ (n : ℕ) (l : list bool) ,
+    best_point n l < 1 + 2 * n := sorry
+
+theorem below_diagonal_path_rotate_best_point : ∀ (n : ℕ) (l : list bool) ,
+    list.length l = 2*n + 1 →
+    count_tt l = n →
+    below_diagonal_path n (list.drop (best_point n l) l ++
+                           list.take (best_point n l) l) := sorry
 
 theorem below_diagonal_path_ends_in_ff : ∀ (n : ℕ) (l : list bool) ,
     below_diagonal_path n l →
@@ -335,6 +390,75 @@ theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
 
 theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
     (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
+
+theorem below_diagonal_rotation_is_0 : ∀ (n : ℕ) (l : list bool) (i : ℕ) ,
+    i < (2*n + 1) →
+    below_diagonal_path n l →
+    below_diagonal_path n (list.drop i l ++ list.take i l) →
+    i = 0 := sorry
+
+theorem below_diagonal_rotations_eq : ∀ (n : ℕ) (l : list bool) (l' : list bool) (i : ℕ) (i' : ℕ) ,
+    below_diagonal_path n l →
+    below_diagonal_path n l' →
+    i < 1 + 2 * n → 
+    i' < 1 + 2 * n → 
+    list.drop i l ++ list.take i l = list.drop i' l' ++ list.take i' l' → 
+    l = l' ∧ i = i' :=
+begin
+    intros ,
+    have e := (calc
+        l = 
+            list.drop (negate_rotation (1+2*n) i)
+                (list.drop i l ++ list.take i l) ++
+            list.take (negate_rotation (1+2*n) i)
+                (list.drop i l ++ list.take i l) : by
+                begin
+                    rw [below_diagonal_path] at a ,
+                    cases a ,
+                    rw nat.add_comm at a_left ,
+                    rw <- a_left ,
+                    rw [negate_negate_rotation] ,
+                    rw a_left , assumption ,
+                end
+        ... = 
+            list.drop (negate_rotation (1+2*n) i)
+                (list.drop i' l' ++ list.take i' l') ++
+            list.take (negate_rotation (1+2*n) i)
+                (list.drop i' l' ++ list.take i' l') : by rw a_4
+        ... =
+            list.drop (compose_rotation (1+2*n) (negate_rotation (1+2*n) i) i') l'
+            ++
+            list.take (compose_rotation (1+2*n) (negate_rotation (1+2*n) i) i') l' : by
+            begin
+                rw [below_diagonal_path] at a_1 ,
+                cases a_1 ,
+                rw nat.add_comm at a_1_left ,
+                rw <- a_1_left ,
+                rw [compose_compose_rotation] ,
+                apply negate_rotation_lt ,
+                rw a_1_left , linarith ,
+            end
+        ) ,
+    have h : ((compose_rotation (1 + 2 * n) (negate_rotation (1 + 2 * n) i) i') = 0)
+        :=
+        (begin
+            apply (below_diagonal_rotation_is_0 n l' _) ,
+            rw nat.add_comm ,
+            apply compose_rotation_lt , linarith ,
+            assumption ,
+            rw [<- e] , assumption ,
+        end),
+    rw h at e ,
+    rw [list.drop, list.take] at e , simp at e ,
+    split ,
+    {
+        assumption ,
+    },
+    {
+        apply (eq_0_of_compose_negate (1+2*n)) ,
+        assumption, assumption, assumption ,
+    },
+end
 
 theorem has_card_set_below_diagonal_path_catalan : ∀ n ,
     has_card {l : list bool | below_diagonal_path n l} (catalan n) :=
@@ -424,12 +548,31 @@ begin
         rw set_n_choose_k at * ,
         simp at a ,
         cases a ,
-        
+        simp ,
+        existsi (list.drop (best_point n z) z ++ list.take (best_point n z) z) ,
+        split ,
+        {
+            apply below_diagonal_path_rotate_best_point ,
+            rw nat.add_comm , assumption ,
+            assumption ,
+        },
+        existsi (negate_rotation (1+2*n) (best_point n z)) ,
+        split ,
+        {
+            apply negate_rotation_lt , linarith ,
+        },
+        {
+            rw [<- a_left] ,
+            apply negate_negate_rotation ,
+            rw a_left ,
+            apply best_point_lt_length ,
+        },
     },
     {
-
+        simp , intros ,
+        apply (below_diagonal_rotations_eq n x x' y y') ; assumption ,
     },
     {
-
+        apply has_card_set_below_diagonal_path_catalan ,
     },
 end
