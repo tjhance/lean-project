@@ -92,8 +92,37 @@ def all_ff : (ℕ) → (list bool)
 | 0 := []
 | (n + 1) := ff :: (all_ff n)
 
-theorem is_all_ff : ∀ x : (list bool) ,
-    count_tt x = 0 -> x = all_ff (list.length x) := sorry
+/- Lean really doesn't like my is_all_ff proof so maybe it should just be reworked completely.
+I'm not convinced I had the winning strategy lol -/
+theorem is_all_ff_aux : ∀ x : (list bool), all_ff (list.length x + 1) = ff:: (all_ff (list.length x))
+| [] := sorry
+| (a::l) := sorry
+
+theorem is_all_ff : ∀ x : (list bool),
+    count_tt x = 0 → x = all_ff (list.length x)
+    | [] := by simp[count_tt, all_ff]
+    | (tt :: l) := by simp[count_tt]
+    | (ff :: l) := λ h: count_tt (ff::l) = 0, 
+    have h0: 0 = count_tt (ff::l), by simp[refl, h],
+    have h1: count_tt (ff::l) = count_tt l, by simp[count_tt], 
+    have h2: count_tt l = 0, by simp[h0, h1, refl],
+    have h3: count_tt l = 0 → l = all_ff (list.length l), by apply is_all_ff l,
+    have h4: l = all_ff (list.length l), by apply h3 h2,
+    have h5: list.length (ff :: l) = list.length l + 1, by simp[list.length],
+    have h6: all_ff (list.length (ff :: l)) 
+        = all_ff(list.length l + 1), by simp[*],
+    begin
+    have h7:  all_ff (list.length (ff :: l)) = ff :: l, by
+    {calc
+        all_ff (list.length (ff :: l)) = all_ff (list.length l + 1): by simp[*]
+                            ... = ff::(all_ff (list.length l)): by apply is_all_ff_aux l
+                            ... = ff :: l : by rw[←h4]},
+    have h8: all_ff (list.length l + 1) = ff :: l, by
+    {calc
+        all_ff (list.length l + 1) = ff::(all_ff (list.length l)): by apply is_all_ff_aux l
+                            ... = ff :: l : by rw[←h4]},
+    have h9: (ff :: l) = all_ff (list.length (ff :: l)), by apply eq.symm h7
+    end
     
 theorem length_all_ff : ∀ n : ℕ ,
     list.length (all_ff n) = n
@@ -112,7 +141,7 @@ theorem count_tt_all_ff : ∀ n : ℕ ,
         end
 
 theorem eq_of_add_1 : ∀ n : ℕ , ∀ m : ℕ ,
-    (n + 1) = (m + 1) -> n = m := sorry
+    (n + 1) = (m + 1) -> n = m := by simp[refl]
 
 theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
     has_card (set_n_choose_k n k) (choose n k)
