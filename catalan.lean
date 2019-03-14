@@ -1,5 +1,6 @@
 import project.identities
 import tactic.linarith
+import data.list
 
 def balanced_aux : (list bool) → (ℕ) → Prop
     | [] 0 := true
@@ -214,8 +215,8 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
         clear e ,
         have e : (sum_to (n + 1) = sum_to j) , rw j'_h, rw e , clear e,
         have n_bound : (n+1) < (bound+1) := a , /- copy this -/
-        rw [<- j'_h] at a ,
-        clear j'_h ,
+        have j_bound : j ≤ (n+1) := sorry ,
+        clear a , clear j'_h ,
 
         /- do induction on j for the summation of the recursion -/
         induction j, 
@@ -229,7 +230,7 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
             apply catalan_set_induction ,
             {
                 apply j_ih ,
-                calc j_n < bound + 1 : sorry , /- should be easy -/
+                calc j_n ≤ n + 1 : sorry , /- should be easy -/
             },
             {
                 clear j_ih ,
@@ -244,12 +245,26 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                     combine_parens
                  ) ,
                  {
+                     simp, intros,
+                     split ,
+                     rw [combine_parens] , simp , rw a , rw a_2 ,
+                     {
+                        calc 1 + (1 + (2 * j_n + 2 * (n - j_n))) = 2 * (n + 1) : sorry
+                     },
+                     {
+                         split,
+                         apply balanced_combine , assumption, assumption ,
+                         rw split_parens_combine_parens , simp , assumption ,
+                         assumption, assumption,
+                     }
+                 },
+                 {
                     simp, intros ,
                     existsi (split_parens z).1 ,
                     existsi (split_parens z).2 ,
                     apply combine_parens_split_parens ,
                     assumption ,
-                    apply not.intro , intros , subst z , simp at a_1 ,linarith , 
+                    apply not.intro , intros , subst z , simp at a ,linarith , 
                  },
                  {
                     simp, intros , 
@@ -261,7 +276,7 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                             end)
                         ... = split_parens (combine_parens x' y') :
                             (begin
-                                rw a_9 ,
+                                rw a_8 ,
                             end)
                         ... = ( x', y' ) :
                             (begin
@@ -290,4 +305,131 @@ begin
     intros ,
     apply (has_card_set_balanced_aux (n+1) n) ,
     linarith ,
+end
+
+/-
+def count_tt_prefix : ℕ → (list bool) -> ℕ
+    | 0 l := 0
+    | (i+1) [] := 0
+    | (i+1) (ff :: l) := count_tt_prefix i l
+    | (i+1) (tt :: l) := count_tt_prefix i l + 1
+-/
+
+def below_diagonal_path (n : ℕ) (l : list bool) :=
+    list.length l = 2*n + 1 ∧
+    count_tt l = n ∧
+    (forall (i:ℕ) , 0 ≤ i → i ≤ (2*n + 1) →
+        (i * n < (2*n+1) * count_tt (list.take i l)))
+
+theorem below_diagonal_path_ends_in_ff : ∀ (n : ℕ) (l : list bool) ,
+    below_diagonal_path n l →
+    (exists t , l = t ++ [ff] ∧ balanced t) := sorry
+
+theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
+    list.length l = 2 * n →
+    balanced l →
+    below_diagonal_path n (l ++ [ff]) := sorry
+
+theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
+    list.take (list.length a) (a ++ b) = a := sorry
+
+theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
+    (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
+
+theorem has_card_set_below_diagonal_path_catalan : ∀ n ,
+    has_card {l : list bool | below_diagonal_path n l} (catalan n) :=
+begin
+    intros ,
+    apply (card_bijection (set_balanced n) _
+        (catalan n)
+        (λ l , l ++ [ff])) ,
+    {
+        rw set_balanced , simp , intros ,
+        apply below_diagonal_path_of_balanced , assumption , assumption ,
+    },
+    {
+        simp , intros ,
+        existsi (list.take (2*n) y) ,
+        have h := below_diagonal_path_ends_in_ff n y a ,
+        cases h , cases h_h ,
+        have e := (
+            calc list.length h_w = list.length (h_w ++ [ff]) - list.length [ff] : 
+                by simp 
+            ... = list.length y - list.length [ff] : by subst y
+            ... = list.length y - 1 : by simp
+            ... = (2*n + 1) - 1 : (begin
+                rw below_diagonal_path at * ,
+                cases a, 
+                rw a_left ,
+            end)
+            ... = (2 * n) : by simp
+        ),
+        have e2 := (
+            calc list.take (2 * n) y = list.take (list.length h_w) y : by rw e
+            ... = list.take (list.length h_w) (h_w ++ [ff]) : by subst y
+            ... = h_w : by rw take_app
+        ),
+        rw e2 ,
+        split , rw [set_balanced] , simp , split , assumption, assumption ,
+        subst y ,
+    },
+    {
+        rw set_balanced , simp , intros ,
+        calc x = list.take (list.length x) (x ++ [ff]) : by rw take_app
+        ... = list.take (list.length x') (x' ++ [ff]) : by rw [a, a_2, a_4]
+        ... = x' : by rw take_app
+    },
+    {
+        apply has_card_set_balanced
+    },
+end
+
+theorem has_card_set_n_choose_k_catalan : ∀ n ,
+    has_card (set_n_choose_k (2*n+1) n) (catalan n * (2*n+1)) :=
+begin
+    intros ,
+    apply (card_product_nat
+        {l : list bool | below_diagonal_path n l}
+        (2*n + 1)
+        (set_n_choose_k (2*n+1) n)
+        (catalan n)
+        (λ l , λ i , list.drop i l ++ list.take i l)
+    ) ,
+    {
+        rw set_n_choose_k , simp , intros ,
+        split ,
+        rw below_diagonal_path at * , cases a ,
+        rw a_left ,
+        have e : min y (2 * n + 1) = y :=
+            (begin
+                apply min_eq_left , apply le_of_lt , rw nat.add_comm , assumption ,
+            end),
+        {
+            calc 2 * n + 1 - y + min y (2 * n + 1) = 2 * n + 1 - y + y : by rw e
+            ... = 2 * n + 1 : sorry
+            ... = 1 + 2 * n : by apply nat.add_comm
+        },
+        {
+            rw below_diagonal_path at a , cases a , cases a_right ,
+            calc count_tt (list.drop y x ++ list.take y x)
+                = count_tt (list.drop y x) + count_tt (list.take y x) : by rw count_tt_app
+            ... = count_tt (list.take y x) + count_tt (list.drop y x) : by rw nat.add_comm
+            ... = count_tt (list.take y x ++ list.drop y x) : by rw count_tt_app
+            ... = count_tt x : sorry
+            ... = n : by rw a_right_left
+        },
+    },
+    {
+        intros ,
+        rw set_n_choose_k at * ,
+        simp at a ,
+        cases a ,
+        
+    },
+    {
+
+    },
+    {
+
+    },
 end

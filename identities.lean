@@ -13,6 +13,16 @@ def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
 
+theorem card_bijection
+    {α : Type} {β : Type}
+        (A : set α) (B : set β) (a : ℕ)
+        (f : (α → β)) :
+    (∀ (x:α) , x ∈ A → f x ∈ B) →
+    (∀ y , y ∈ B → ∃ x , x ∈ A ∧ f x = y) →
+    (∀ x x' , x ∈ A → x' ∈ A → f x = f x' → x = x') →
+    has_card A a →
+    has_card B a := sorry
+
 theorem card_split
     {α : Type} (A : set α) (B : set α) (C : set α) (b : ℕ) (c : ℕ) :
     (∀ x , x ∈ A → (x ∈ B ∨ x ∈ C)) → 
@@ -25,6 +35,8 @@ theorem card_split_map
     {α : Type} {β : Type} {γ : Type}
         (A : set α) (B : set β) (C : set γ) (b : ℕ) (c : ℕ)
         (f : (β → α)) (g : (γ → α)) : 
+    (∀ y , y ∈ B → f y ∈ A) →
+    (∀ z , z ∈ C → g z ∈ A) → 
     (∀ x , x ∈ A → (∃ y:β , y ∈ B ∧ f y = x) ∨ (∃ z:γ , z ∈ C ∧ g z = x)) → 
     (∀ y z , (y ∈ B → z ∈ B → f y = f z → y = z )) →
     (∀ y z , (y ∈ C → z ∈ C → g y = g z → y = z )) →
@@ -48,11 +60,25 @@ theorem card_product
     {α : Type} {β : Type} {γ : Type}
         (A : set α) (B : set β) (C : set γ) (a : ℕ) (b : ℕ)
         (f : α → β → γ) :
+    (∀ x y , x ∈ A → y ∈ B → f x y ∈ C) →
     (∀ z , z ∈ C → ∃ x y , f x y = z) → 
-    (∀ x y x' y' , f x y = f x' y' → x = x' ∧ y = y') →
+    (∀ (x:α) (y:β) (x':α) (y':β) , x ∈ A → x' ∈ A → y ∈ B → y' ∈ B →
+            f x y = f x' y' → x = x' ∧ y = y') →
     has_card A a →
     has_card B b →
     has_card C (a * b) := sorry 
+
+theorem card_product_nat
+    {α : Type} {γ : Type}
+        (A : set α) (b : ℕ) (C : set γ) (a : ℕ)
+        (f : α → ℕ → γ) :
+    (∀ x y , x ∈ A → 0 ≤ y → y < b → f x y ∈ C) →
+    (∀ z , z ∈ C → ∃ x y , f x y = z) → 
+    (∀ (x:α) (y:ℕ) (x':α) (y':ℕ) ,
+            x ∈ A → x' ∈ A → 0 ≤ y → y < b → 0 ≤ y' → y' < b →
+            f x y = f x' y' → x = x' ∧ y = y') →
+    has_card A a →
+    has_card C (a * b) := sorry
 
 def count_tt : (list bool) -> ℕ
     | [] := 0
