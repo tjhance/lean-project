@@ -1,6 +1,7 @@
 import project.identities
 import tactic.linarith
 import data.list
+import data.int.basic
 
 def balanced_aux : (list bool) → (ℕ) → Prop
     | [] 0 := true
@@ -338,6 +339,15 @@ def negate_rotation (n:ℕ) (i:ℕ) :=
 def compose_rotation (n:ℕ) (i:ℕ) (j:ℕ) :=
     (i + j) % n
 
+theorem best_point_gt (n:ℕ) (l : list bool) (j:ℕ) :
+    j < 2 * n + 1 → 
+    (int.of_nat n) * (int.of_nat (best_point n l)) -
+            (2*(int.of_nat n) + 1) * (int.of_nat (count_tt (list.take (best_point n l) l)))
+    ≥
+    (int.of_nat n) * (int.of_nat j) -
+            (2*(int.of_nat n) + 1) * (int.of_nat (count_tt (list.take j l)))
+            := sorry
+
 theorem negate_rotation_lt : ∀ (n:ℕ) (i:ℕ) ,
     0 < n → negate_rotation n i < n := sorry
 
@@ -370,11 +380,124 @@ theorem negate_negate_rotation {α : Type} : ∀ (l:list α) (i:ℕ) ,
 theorem best_point_lt_length : ∀ (n : ℕ) (l : list bool) ,
     best_point n l < 1 + 2 * n := sorry
 
+theorem count_tt_take_drop : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
+    i + p < list.length l → 
+    int.of_nat (count_tt (list.take i (list.drop p l ++ list.take p l))) =
+    int.of_nat (count_tt (list.take (p+i) l)) -
+        int.of_nat (count_tt (list.take p l)) := sorry
+
+theorem count_tt_take_drop_2 : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
+    p + i ≥ list.length l → 
+    int.of_nat (count_tt (list.take i (list.drop p l ++ list.take p l))) =
+        int.of_nat (count_tt l) -
+        int.of_nat (count_tt (list.take p l)) +
+        int.of_nat (count_tt (list.take (p+i-list.length l) l)) := sorry
+
+theorem int_of_nat_add : ∀ (a:ℕ) (b:ℕ) ,
+    int.of_nat (a + b) = int.of_nat a + int.of_nat b := sorry
+
+theorem int_of_nat_sub : ∀ (a:ℕ) (b:ℕ) ,
+    int.of_nat (a - b) = int.of_nat a - int.of_nat b := sorry
+
 theorem below_diagonal_path_rotate_best_point : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2*n + 1 →
     count_tt l = n →
     below_diagonal_path n (list.drop (best_point n l) l ++
-                           list.take (best_point n l) l) := sorry
+                           list.take (best_point n l) l) :=
+begin
+    intros ,
+    rw [below_diagonal_path] ,
+    split ,
+    {
+        calc list.length (list.drop (best_point n l) l ++ list.take (best_point n l) l) =
+        list.length (list.drop (best_point n l) l) + list.length (list.take (best_point n l) l) : by simp
+        ... = list.length (list.take (best_point n l) l) + list.length (list.drop (best_point n l) l) : (by rw [nat.add_comm])
+        ... = list.length (list.take (best_point n l) l ++ list.drop (best_point n l) l) : sorry
+        ... = list.length (l) : sorry
+        ... = 2 * n + 1 : (by rw a)
+    },
+    split ,
+    {
+        calc count_tt (list.drop (best_point n l) l ++ list.take (best_point n l) l) =
+        count_tt (list.drop (best_point n l) l) + count_tt (list.take (best_point n l) l) : sorry
+        ... = count_tt (list.take (best_point n l) l) + count_tt (list.drop (best_point n l) l) : (by rw [nat.add_comm])
+        ... = count_tt (list.take (best_point n l) l ++ list.drop (best_point n l) l) : sorry
+        ... = count_tt (l) : sorry
+        ... = n : (by rw a_1)
+    },
+    {
+        intros ,
+
+        have j' : (∃ j , j = best_point n l) , existsi (best_point n l), trivial, cases j', rename j'_w p, rename j'_h p_eq ,
+        
+        rw [<- p_eq] ,
+
+        by_cases ((p+i) < 2*n + 1) ,
+        {
+            have ineq := best_point_gt n l (p + i) h,
+            rw [<- p_eq] at ineq ,
+            calc int.of_nat i * int.of_nat n -
+                (2 * int.of_nat n + 1) * int.of_nat (count_tt
+                (list.take i (list.drop p l ++ list.take p l)))
+            = int.of_nat i * int.of_nat n -
+                (2 * int.of_nat n + 1) * (
+                    int.of_nat (count_tt (list.take (p + i) l)) -
+                    int.of_nat (count_tt (list.take (p) l))
+                ) :
+                begin
+                    rw count_tt_take_drop ,
+                    rw [a, nat.add_comm] , assumption ,
+                end
+            ... =
+            (int.of_nat n * int.of_nat (p + i) - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take (p + i) l))) - 
+            (int.of_nat n * int.of_nat p - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take p l))) :
+                begin
+                    clear ineq,
+                    simp [add_mul, int_of_nat_add, mul_add] ,
+                    apply mul_comm ,
+                end
+            ... ≤ 0 :
+                begin
+                    linarith ,
+                end
+        },
+        {
+            have ineq := best_point_gt n l (p + i - (2*n+1))
+                (begin
+                    exact sorry
+                end),
+            rw [<- p_eq] at ineq ,
+
+            calc int.of_nat i * int.of_nat n - 
+                (2 * int.of_nat n + 1) * int.of_nat (count_tt
+                (list.take i (list.drop p l ++ list.take p l)))
+            = int.of_nat i * int.of_nat n - 
+                (2 * int.of_nat n + 1) * (
+                    int.of_nat (count_tt l) -
+                    int.of_nat (count_tt (list.take p l)) +
+                    int.of_nat (count_tt (list.take (p+i-(2*n+1)) l))
+                ) :
+                begin
+                    rw count_tt_take_drop_2 ,
+                    rw a ,
+                    linarith ,
+                end
+            ... =
+            (int.of_nat n * int.of_nat (p + i - n) - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take (p + i - (2*n+1)) l))) -
+            (int.of_nat n * int.of_nat p - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take p l))) :
+                begin
+                    clear ineq,
+                    rw a_1 ,
+                    simp [add_mul, int_of_nat_add, mul_add, int_of_nat_sub] ,
+                    rw [@nat.add_comm (int.of_nat n) (int.of_nat i)],
+                    
+                end
+            ... ≤ 0 : sorry
+        
+        }
+    }
+
+end
 
 theorem below_diagonal_path_ends_in_ff : ∀ (n : ℕ) (l : list bool) ,
     below_diagonal_path n l →

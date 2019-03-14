@@ -61,7 +61,7 @@ theorem card_product
         (A : set α) (B : set β) (C : set γ) (a : ℕ) (b : ℕ)
         (f : α → β → γ) :
     (∀ x y , x ∈ A → y ∈ B → f x y ∈ C) →
-    (∀ z , z ∈ C → ∃ x y , f x y = z) → 
+    (∀ z , z ∈ C → ∃ x y , x ∈ A ∧ y ∈ B ∧ f x y = z) → 
     (∀ (x:α) (y:β) (x':α) (y':β) , x ∈ A → x' ∈ A → y ∈ B → y' ∈ B →
             f x y = f x' y' → x = x' ∧ y = y') →
     has_card A a →
@@ -73,7 +73,7 @@ theorem card_product_nat
         (A : set α) (b : ℕ) (C : set γ) (a : ℕ)
         (f : α → ℕ → γ) :
     (∀ x y , x ∈ A → 0 ≤ y → y < b → f x y ∈ C) →
-    (∀ z , z ∈ C → ∃ x y , f x y = z) → 
+    (∀ z , z ∈ C → ∃ x y , x ∈ A ∧ 0 ≤ y ∧ y < b ∧ f x y = z) → 
     (∀ (x:α) (y:ℕ) (x':α) (y':ℕ) ,
             x ∈ A → x' ∈ A → 0 ≤ y → y < b → 0 ≤ y' → y' < b →
             f x y = f x' y' → x = x' ∧ y = y') →
