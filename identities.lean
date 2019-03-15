@@ -92,12 +92,6 @@ def all_ff : (ℕ) → (list bool)
 | 0 := []
 | (n + 1) := ff :: (all_ff n)
 
-/- Lean really doesn't like my is_all_ff proof so maybe it should just be reworked completely.
-I'm not convinced I had the winning strategy lol -/
-theorem is_all_ff_aux : ∀ x : (list bool), all_ff (list.length x + 1) = ff:: (all_ff (list.length x))
-| [] := by simp[all_ff]
-| (a::l) := by rw[all_ff]
-
 theorem is_all_ff : ∀ x : (list bool),
     count_tt x = 0 → x = all_ff (list.length x)
     | [] := by simp[count_tt, all_ff]
@@ -106,8 +100,7 @@ theorem is_all_ff : ∀ x : (list bool),
     have h0: 0 = count_tt (ff::l), by simp[refl, h],
     have h1: count_tt (ff::l) = count_tt l, by simp[count_tt], 
     have h2: count_tt l = 0, by simp[h0, h1, refl],
-    have h3: count_tt l = 0 → l = all_ff (list.length l), by apply is_all_ff l,
-    have h4: l = all_ff (list.length l), by apply h3 h2,
+    have h3: l = all_ff (list.length l), by apply (is_all_ff l) h2,
     have h5: list.length (ff :: l) = list.length l + 1, by simp[list.length],
     have h6: all_ff (list.length (ff :: l)) 
         = all_ff(list.length l + 1), by simp[*],
@@ -115,12 +108,8 @@ theorem is_all_ff : ∀ x : (list bool),
     have h7:  all_ff (list.length (ff :: l)) = ff :: l, by
     {calc
         all_ff (list.length (ff :: l)) = all_ff (list.length l + 1): by simp[*]
-                            ... = ff::(all_ff (list.length l)): by apply is_all_ff_aux l
-                            ... = ff :: l : by rw[←h4]},
-    have h8: all_ff (list.length l + 1) = ff :: l, by
-    {calc
-        all_ff (list.length l + 1) = ff::(all_ff (list.length l)): by apply is_all_ff_aux l
-                            ... = ff :: l : by rw[←h4]},
+                            ... = ff::(all_ff (list.length l)): by rw[all_ff]
+                            ... = ff :: l : by rw[←h3]},
     apply eq.symm h7
     end
     
