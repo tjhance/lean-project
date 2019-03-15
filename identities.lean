@@ -21,7 +21,22 @@ theorem card_bijection
     (∀ y , y ∈ B → ∃ x , x ∈ A ∧ f x = y) →
     (∀ x x' , x ∈ A → x' ∈ A → f x = f x' → x = x') →
     has_card A a →
-    has_card B a := sorry
+    has_card B a := begin
+    assume A1 A2 A3 h4,
+    simp[has_card],
+    have exh: ∃ L: (list α) , list.length L = a ∧ (∀ x : α , x ∈ A ↔ x ∈ L)
+            ∧ list.nodup L, from h4,
+    apply exists.elim exh,
+    {
+        assume L, assume hL: list.length L = a ∧ (∀ x : α , x ∈ A ↔ x ∈ L)
+            ∧ list.nodup L,
+        let fL: list β := list.map f L,
+        have B1: list.length fL = a, from sorry,
+        have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from sorry,
+        have B3: list.nodup fL, from sorry,
+        exact ⟨fL, and.intro B1 (and.intro B2 B3)⟩,
+    }
+    end
 
 theorem card_split
     {α : Type} (A : set α) (B : set α) (C : set α) (b : ℕ) (c : ℕ) :
@@ -175,8 +190,8 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
         simp [set_n_choose_k] ,
         apply (card_split_map
             ({l : list bool | list.length l = n + 1 ∧ count_tt l = k + 1})
-            ({l : (list bool) | length l = n ∧ count_tt l = k})
-            ({l : (list bool) | length l = n ∧ count_tt l = k+1})
+            ({l : (list bool) | list.length l = n ∧ count_tt l = k})
+            ({l : (list bool) | list.length l = n ∧ count_tt l = k+1})
             (choose n k)
             (choose n (k+1))
             (λ r : (list bool) , ((tt :: r) : list bool))
