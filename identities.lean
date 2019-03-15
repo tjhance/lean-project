@@ -63,8 +63,18 @@ theorem card_split_map
 theorem card_0
     {α : Type} (A : set α) :
     (∀ (y:α) , y ∈ A → false) →
-    has_card A 0 := sorry
-
+    has_card A 0 := 
+    begin
+    intro h,
+    have h0: list.length ([]: list α) = 0, by rw[list.length],
+    have h1: (∀ x : α , x ∈ A ↔ x ∈ ([]: list α)), 
+        by {intro x, split, 
+            {intro xh, apply h x xh},
+            intro xh, simp at xh, contradiction},
+    have h2: list.nodup ([]: list α), by simp,
+    exact ⟨([]: list α), and.intro h0 (and.intro h1 h2)⟩ 
+    end
+    
 theorem card_1
     {α : Type} (A : set α) (x : α) :
     (x ∈ A) →
