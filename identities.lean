@@ -74,12 +74,23 @@ theorem card_0
     have h2: list.nodup ([]: list α), by simp,
     exact ⟨([]: list α), and.intro h0 (and.intro h1 h2)⟩ 
     end
-    
+
 theorem card_1
     {α : Type} (A : set α) (x : α) :
     (x ∈ A) →
     (∀ (y:α) , y ∈ A → x = y) →
-    has_card A 1 := sorry
+    has_card A 1 := 
+    begin
+    intro h,
+    intro hall,
+    have h0: list.length (x::[]) = 1, by simp,
+    have h1: (∀ z : α , z ∈ A ↔ z ∈ (x::[])), 
+        by {intro z, split, 
+            {intro zh, have newh: x = z, by apply hall z zh, simp *},
+            intro zh, simp at zh, simp *},
+    have h2: list.nodup (x::[]), by simp,
+    exact ⟨(x::[]), and.intro h0 (and.intro h1 h2)⟩
+    end
 
 theorem card_product
     {α : Type} {β : Type} {γ : Type}
