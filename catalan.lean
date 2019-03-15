@@ -27,6 +27,46 @@ def catalan_aux : ℕ → ℕ → ℕ
 def catalan (n : ℕ) : ℕ :=
     catalan_aux n n
 
+theorem eq_sum_to_sum_to : ∀ (f : ℕ → ℕ) (g : ℕ → ℕ) (n : ℕ) ,
+    (∀ i , i < n → f i = g i) → 
+    sum_to n f = sum_to n g :=
+    begin
+        intros ,
+        induction n ,
+        refl ,
+        rw [sum_to] , rw [sum_to] ,
+        have h : (f n_n = g n_n) := a n_n (
+            begin
+                have e : (nat.succ n_n) = (n_n + 1) := rfl,
+                rewrite e , linarith ,
+            end),
+        have h2 : (sum_to n_n f = sum_to n_n g) :=
+            begin
+                apply n_ih , intros ,
+                exact (a i (begin
+                    have f : (nat.succ n_n) = (n_n + 1) := rfl,
+                    rw [f], linarith ,
+                end)),
+            end,
+        rw [h, h2], 
+    end
+
+theorem eq_catalan_catalan_aux : ∀ (bound:ℕ) (n:ℕ) ,
+    n ≤ bound → 
+    catalan_aux bound n = catalan n :=
+    begin
+        intro ,
+        induction bound , intros ,
+        cases n , refl, simp at a , trivial ,
+        intros ,
+        cases n , refl, 
+        rw [catalan] ,
+        rw [catalan_aux] , rw [catalan_aux] ,
+        apply eq_sum_to_sum_to ,
+        intros ,
+        
+    end
+
 theorem catalan_recurrence : ∀ n ,
     catalan (n+1) = sum_to (n+1) (λ i , catalan i * catalan (n - i)) :=
     sorry
