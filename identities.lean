@@ -95,8 +95,8 @@ def all_ff : (ℕ) → (list bool)
 /- Lean really doesn't like my is_all_ff proof so maybe it should just be reworked completely.
 I'm not convinced I had the winning strategy lol -/
 theorem is_all_ff_aux : ∀ x : (list bool), all_ff (list.length x + 1) = ff:: (all_ff (list.length x))
-| [] := sorry
-| (a::l) := sorry
+| [] := by simp[all_ff]
+| (a::l) := by rw[all_ff]
 
 theorem is_all_ff : ∀ x : (list bool),
     count_tt x = 0 → x = all_ff (list.length x)
@@ -121,7 +121,7 @@ theorem is_all_ff : ∀ x : (list bool),
     {calc
         all_ff (list.length l + 1) = ff::(all_ff (list.length l)): by apply is_all_ff_aux l
                             ... = ff :: l : by rw[←h4]},
-    have h9: (ff :: l) = all_ff (list.length (ff :: l)), by apply eq.symm h7
+    apply eq.symm h7
     end
     
 theorem length_all_ff : ∀ n : ℕ ,
@@ -185,7 +185,7 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
     begin
         simp [set_n_choose_k] ,
         apply (card_split_map
-            ({l : list bool | length l = n + 1 ∧ count_tt l = k + 1})
+            ({l : list bool | list.length l = n + 1 ∧ count_tt l = k + 1})
             ({l : (list bool) | length l = n ∧ count_tt l = k})
             ({l : (list bool) | length l = n ∧ count_tt l = k+1})
             (choose n k)
