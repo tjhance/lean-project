@@ -2,6 +2,7 @@ import project.identities
 import tactic.linarith
 import data.list
 import data.int.basic
+import data.nat.gcd
 
 def balanced_aux : (list bool) → (ℕ) → Prop
     | [] 0 := true
@@ -238,7 +239,8 @@ theorem length_combine_parens : ∀ (l : list bool) (m : list bool) ,
     balanced l →
     balanced m →
     list.length (combine_parens l m) = list.length l + list.length m + 2
-    := sorry
+    :=
+sorry
 
 theorem even_length_of_balanced : ∀ (l : list bool) ,
     balanced l →
@@ -248,7 +250,7 @@ theorem even_length_of_balanced : ∀ (l : list bool) ,
 theorem length_split_parens_1_le : ∀ (l : list bool) ,
     balanced l →
     ¬(l = list.nil) →
-    list.length (split_parens l).1 ≤ list.length l - 2
+    list.length (split_parens l).1 ≤ list.length l - 2 := sorry
 
 lemma catalan_set_eq_with_bound : ∀ (n:ℕ) ,
     {l : list bool | list.length l = 2 * (n + 1) ∧ balanced l} = 
@@ -283,13 +285,69 @@ begin
         cases a , cases a_right , simp , split , assumption ,
         assumption ,
     }
+end 
+
+theorem nat_lt_of_not_eq : ∀ (n:ℕ) (m:ℕ) ,
+    n < m+1 → ¬(n = m) → n < m :=
+begin
+    intros ,
+    by_contradiction ,
+    have h : (n = m) := nat.eq_of_lt_succ_of_not_lt a a_2 ,
+    contradiction ,
 end
 
 theorem even_nat_lt : ∀ (n:ℕ) (m:ℕ) ,
     (n) < 2*(m + 1) → 
     ¬ ((n) = 2*m) →
     2 ∣ n → 
-    n < 2*m := sorry
+    n < 2*m :=
+begin
+    intros ,
+    by_cases (n = 2 * m + 1) ,
+    {
+        subst n ,
+        /- derive a contradiction from 2 | 2*m + 1
+           (surely there was an easier way to do this?) -/
+        have h : (2 ∣ (2 * int.of_nat m)) := dvd_mul_right _ _,
+        have h1 : (2 ∣ (2 * int.of_nat m) + 1) := begin
+            have h3 : (2 ∣ int.of_nat (2*m + 1)) :=
+                begin
+                    apply int.of_nat_dvd_of_dvd_nat_abs ,
+                    simp , simp at a_2 , assumption ,
+                end,
+            have two_eq : 2 = int.of_nat 2 := by refl ,
+            rw two_eq ,
+            have one_eq : 1 = int.of_nat 1 := by refl ,
+            rw one_eq ,
+            rw <- int.of_nat_mul ,
+            rw <- int.of_nat_add ,
+            assumption ,
+        end,
+        have h2 : (2 ∣ ((2 * int.of_nat m) + 1) - (2 * int.of_nat m)) :=
+            begin
+                apply dvd_sub , assumption , assumption ,
+            end,
+        simp at h2,
+        have h3 : ((1:int) % 2 = 0) := begin
+                apply int.mod_eq_zero_of_dvd , assumption ,
+            end,
+        have h4 : ((1:int) % 2 = 1) := rfl ,
+        rw h4 at h3 ,
+        simp at h3 ,
+        contradiction ,
+    },
+    {
+        have i : (2*(m+1) = (2*m + 1) + 1) := begin
+            rw [mul_add] , simp , rw [<- @nat.add_assoc 1 _] ,
+        end,
+        have j : (n < ((2*m) + 1) + 1) := begin
+            rw <- i , assumption ,
+        end ,
+        have k : (n < (2*m) + 1) := nat_lt_of_not_eq _ _ j h ,
+        have l : (n < (2*m)) := nat_lt_of_not_eq _ _ k a_1 ,
+        assumption ,
+    }
+end
 
 lemma catalan_set_induction : ∀ (n:ℕ) (i:ℕ) (a:ℕ) (b:ℕ) ,
     has_card {l : list bool | list.length l = 2 * (n + 1) ∧ balanced l ∧
