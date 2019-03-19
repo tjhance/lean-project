@@ -15,88 +15,214 @@ def balanced (l : list bool) : Prop := balanced_aux l 0
 def set_balanced (n : ℕ) : set (list bool) :=
     { l : list bool | list.length l = 2 * n ∧ balanced l }
 
-def sum_to : (ℕ) → (ℕ → ℕ) → ℕ
+def sum_to : Π (n:ℕ) , (Π (x:ℕ) , (x<n) → ℕ) → ℕ
     | 0 f := 0
-    | (n+1) f := f n + sum_to n f
+    | (n+1) f :=
+        have h : n < (n+1) , by linarith ,
+        have f' : (Π (x:ℕ) , (x<n) → ℕ) , from 
+            (λ x , λ ineq , f x (by linarith)) ,
+        f n h + sum_to n f'
 
-def catalan_aux : ℕ → ℕ → ℕ
-    | b 0 := 1
-    | 0 (n + 1) := 1 /- doesn't matter -/
-    | (b + 1) (n + 1) := sum_to (n+1) (λ i,
-        catalan_aux b i * catalan_aux b (n-i))
-def catalan (n : ℕ) : ℕ :=
-    catalan_aux n n
-
-theorem eq_sum_to_sum_to : ∀ (f : ℕ → ℕ) (g : ℕ → ℕ) (n : ℕ) ,
-    (∀ i , i < n → f i = g i) → 
-    sum_to n f = sum_to n g :=
-    begin
-        intros ,
-        induction n ,
-        refl ,
-        rw [sum_to] , rw [sum_to] ,
-        have h : (f n_n = g n_n) := a n_n (
-            begin
-                have e : (nat.succ n_n) = (n_n + 1) := rfl,
-                rewrite e , linarith ,
-            end),
-        have h2 : (sum_to n_n f = sum_to n_n g) :=
-            begin
-                apply n_ih , intros ,
-                exact (a i (begin
-                    have f : (nat.succ n_n) = (n_n + 1) := rfl,
-                    rw [f], linarith ,
-                end)),
-            end,
-        rw [h, h2], 
-    end
-
-theorem eq_catalan_catalan_aux : ∀ (bound:ℕ) (n:ℕ) ,
-    n ≤ bound → 
-    catalan_aux bound n = catalan n :=
-    begin
-        intro ,
-        induction bound , intros ,
-        cases n , refl, simp at a , trivial ,
-        intros ,
-        cases n , refl, 
-        rw [catalan] ,
-        rw [catalan_aux] , rw [catalan_aux] ,
-        apply eq_sum_to_sum_to ,
-        intros ,
-        
-    end
-
-theorem catalan_recurrence : ∀ n ,
-    catalan (n+1) = sum_to (n+1) (λ i , catalan i * catalan (n - i)) :=
-    sorry
+def catalan : ℕ → ℕ
+    | 0 := 1
+    | (n+1) := sum_to (n+1) (λ i , λ i_le_n ,
+            have nmi_le_n : (n-i < (n+1)),
+                by apply nat.sub_lt_succ ,
+            catalan i * catalan (n-i)
+        )
 
 /- split (A)B into A, B -/
 def split_parens_aux : (list bool) → (ℕ) → (list bool × list bool)
 | ([]) n := ([],[])
 | (ff :: l) 0 := ⟨ [], [] ⟩ /- doesn't matter -/
 | (ff :: l) 1 := ⟨ [], l ⟩
-| (ff :: l) (d + 1) := let p := split_parens_aux l d in ⟨ ff :: p.1 , p.2 ⟩
+| (ff :: l) (d + 2) := let p := split_parens_aux l (d+1) in ⟨ ff :: p.1 , p.2 ⟩
 | (tt :: l) (d) := let p := split_parens_aux l (d+1) in ⟨ tt :: p.1 , p.2 ⟩
 def split_parens : (list bool) → (list bool × list bool)
 | [] := ([],[]) /- doesn't matter -/
-| (ff :: l) = split_parens_aux l 1
-| (tt :: l) = ([],[]) /- doesn't matter -/
+| (tt :: l) := split_parens_aux l 1
+| (ff :: l) := ([],[]) /- doesn't matter -/
 
 /- combined A, B into (A)B -/
 def combine_parens (l : list bool) (m : list bool) : (list bool) :=
     tt :: l ++ ff :: m
 
+theorem balanced_split_parens_2_aux : ∀ (l:list bool) (d:ℕ) ,
+    balanced_aux l d -> balanced (split_parens_aux l d).2
+    | [] 0 :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp ,
+    end
+    | [] (d + 1) :=
+    begin
+        intros ,
+        rw [balanced_aux] at * , contradiction ,
+    end
+    | (tt :: l) d :=
+    begin
+        intros , rw [balanced_aux] at * ,
+        rw [split_parens_aux] ,
+        simp ,
+        apply balanced_split_parens_2_aux , assumption ,
+    end
+    | (ff :: l) 0 :=
+    begin
+        intros ,
+        rw [split_parens_aux, balanced], simp ,
+    end
+    | (ff :: l) (d + 1) :=
+    begin
+        intros ,
+        cases d,
+        {
+            simp , rw [split_parens_aux] , simp ,
+            rw [balanced_aux] at a , rw [balanced] , assumption ,
+        },
+        {
+            rw [split_parens_aux] , simp ,
+            apply balanced_split_parens_2_aux ,
+            rw [balanced_aux] at a,
+            have h : (d + 1) = nat.succ d := rfl ,
+            rw [h] , assumption ,
+        }
+    end
+
+theorem balanced_split_parens_1_aux : ∀ (l:list bool) (d:ℕ) ,
+    balanced_aux l (d+1) -> balanced_aux (split_parens_aux l (d+1)).1 d
+    | [] 0 :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp ,
+    end
+    | [] (d + 1) :=
+    begin
+        intros ,
+        rw [balanced_aux] at * , contradiction ,
+    end
+    | (tt :: l) d :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp ,
+        apply balanced_split_parens_1_aux , 
+        rw [balanced_aux] at a , assumption ,
+    end
+    | (ff :: l) 0 :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp , 
+    end
+    | (ff :: l) (d + 1) :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp , rw [balanced_aux] ,
+        apply balanced_split_parens_1_aux ,
+        rw [balanced_aux] at a ,
+        assumption ,
+    end
+
 theorem balanced_split_parens_1 : ∀ (l : list bool) ,
-    balanced l -> balanced (split_parens l).1 := sorry
+    balanced l -> balanced (split_parens l).1 :=
+    begin
+        intros ,
+        rw [balanced] ,
+        cases l ,
+        {
+            rw [split_parens, balanced_aux] , trivial ,
+        },
+        cases l_hd ,
+        {
+            rw [balanced] at a,
+            rw [balanced_aux] at a ,
+            contradiction ,
+        },
+        {
+            rw [split_parens] ,
+            apply balanced_split_parens_1_aux ,
+            rw [balanced] at a , rw [balanced_aux] at a ,
+            assumption ,
+        }
+    end
 
 theorem balanced_split_parens_2 : ∀ (l : list bool) ,
-    balanced l -> balanced (split_parens l).2 := sorry
+    balanced l -> balanced (split_parens l).2 :=
+    begin
+        intros ,
+        rw [balanced] ,
+        cases l ,
+        {
+            rw split_parens , simp , 
+        },
+        cases l_hd ,
+        {
+            rw [balanced] at a,
+            rw [balanced_aux] at a ,
+            contradiction ,   
+        },
+        {
+            apply balanced_split_parens_2_aux ,
+            rw [balanced, balanced_aux] at a , simp at a , assumption ,
+        }
+    end
+
+theorem balanced_combine_aux : ∀ (l : list bool) (m : list bool) (d:ℕ) ,
+    balanced_aux l d →
+    balanced m →
+    balanced_aux (l ++ ff :: m) (d+1)
+| [] m :=
+    begin
+        intros , simp , rw [balanced_aux] ,
+        cases d ,
+        {
+            rw [balanced] at a_1 , assumption ,
+        },
+        {
+            rw [balanced_aux] at a , contradiction ,
+        }
+    end
+| (x :: l) m :=
+    begin
+        intros ,
+        cases x ,
+        {
+            have h : (ff :: l ++ ff :: m = ff :: (l ++ ff :: m)) := by simp,
+            rw h ,
+            rw [balanced_aux] ,
+            cases d ,
+            {
+                rw [balanced_aux] at a , contradiction ,
+            },
+            {
+                apply balanced_combine_aux ,
+                rw [balanced_aux] at a , assumption ,
+                assumption ,
+            }
+        },
+        {
+            have h : (tt :: l ++ ff :: m = tt :: (l ++ ff :: m)) := by simp,
+            rw h ,
+            rw [balanced_aux] ,
+            apply balanced_combine_aux ,
+            rw [balanced_aux] at a , assumption,
+            assumption,
+        }
+    end
 
 theorem balanced_combine : ∀ (l : list bool) (m : list bool) ,
     balanced l →
     balanced m →
-    balanced (combine_parens l m) := sorry
+    balanced (combine_parens l m) :=
+begin
+    intros , rw [combine_parens] , 
+    rw [balanced] ,
+    have h : (tt :: l ++ ff :: m = tt :: (l ++ ff :: m)) := by simp,
+    rw h ,
+    rw [balanced_aux] ,
+    apply balanced_combine_aux ,
+    rw [balanced] at a ,
+    assumption ,
+    assumption ,
+end
 
 theorem split_parens_combine_parens : ∀ (l : list bool) (m : list bool) ,
     balanced l →
