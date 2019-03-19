@@ -240,12 +240,59 @@ theorem length_combine_parens : ∀ (l : list bool) (m : list bool) ,
     balanced m →
     list.length (combine_parens l m) = list.length l + list.length m + 2
     :=
-sorry
+begin
+    intros , rw [combine_parens] , simp , rw [<- add_assoc] , simp ,
+end
+
+theorem even_length_of_balanced_aux : ∀ (l : list bool) (d : ℕ) ,
+    balanced_aux l d → 
+    (∃ m , list.length l + d = 2 * m)
+    | [] 0 :=
+    begin
+        intros , existsi 0 , simp ,
+    end
+    | [] (d + 1) :=
+    begin
+        intros , rw [balanced_aux] at a , contradiction ,
+    end
+    | (tt :: l) d :=
+    begin
+        intros ,
+        rw [balanced_aux] at a ,
+        have h := even_length_of_balanced_aux l (d+1) a ,
+        cases h ,
+        existsi h_w ,
+        simp ,
+        simp at h_h , assumption ,
+    end
+    | (ff :: l) 0 :=
+    begin
+        intros , rw [balanced_aux] at a , contradiction ,
+    end
+    | (ff :: l) (d + 1) :=
+    begin
+        intros ,
+        rw [balanced_aux] at a ,
+        have h := even_length_of_balanced_aux l d a ,
+        cases h ,
+        existsi (h_w + 1) ,
+        rw [mul_add] , simp , rw <- h_h , simp ,
+        rw [<- add_assoc] , simp ,
+    end
 
 theorem even_length_of_balanced : ∀ (l : list bool) ,
     balanced l →
     2 ∣ list.length l
-    := sorry
+    :=
+begin
+    intros ,
+    rw [balanced] at a ,
+    have h := even_length_of_balanced_aux l 0 a ,
+    cases h ,
+    simp at h_h ,
+    rw h_h ,
+    apply dvd_mul_right ,
+end
 
 theorem length_split_parens_1_le : ∀ (l : list bool) ,
     balanced l →
