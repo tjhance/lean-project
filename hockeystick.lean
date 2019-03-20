@@ -26,11 +26,16 @@ nat.rec_on k 1 (λ k ih, ih + (choose (r + k + 1) r))
 #eval sum_for_hockey_stick 5 3 /- calculates 5 choose 5 + 6 choose 5 + 7 choose 5 + 8 choose 5-/
 #eval choose 9 6
 
-/- Says that for natural numbers r and n, if n > r, then the sum from i = r to n 
+/- Says that for natural numbers r and n, if n >= r, then the sum from i = r to n 
 of i choose r equals n + 1 choose r + 1 -/
-theorem hockey_stick_identity (n r : ℕ) :
-n > r → (sum_for_hockey_stick r (n - r)) = (choose (n + 1) (r + 1)) :=
-sorry
+theorem hockey_stick_identity (k r : ℕ) :
+sum_for_hockey_stick r k = (choose (r + k + 1) (r + 1)) :=
+begin
+induction k,
+{have h: sum_for_hockey_stick r 0 = 1, by refl,
+simp[*, refl]},
+{sorry}
+end
 
 /- sum_for_hockey_stick takes m, n, r, and k and computes the sum from k = 0 to i of
 (m choose k)*(n choose r - k), which is what we'll use in Vandermonde's identity 
@@ -52,5 +57,5 @@ nat.rec_on i ((choose m 0)*(choose n r))
 /- Vandermonde's identity says that m + n choose r equals the 
 sum from k = 0 to r of (m choose k)*(n choose r - k)
 -/
-theorem vandermonde_identity (m n r : ℕ) : 
+theorem vandermonde_identity (m n r : ℕ) :
 sum_for_vandermonde m n r r = choose (m + n) r := sorry
