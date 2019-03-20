@@ -9,6 +9,34 @@ import data.list
 #check @finset.mk
 #check choose 5 4
 
+/- Collaboration between
+   Travis Hance (thance)
+   Katherine Cordwell (kcordwell)
+-/
+
+/- Our plan is to prove various combinatorial identities.
+In paritcular,
+
+ - Vandermonde's identity
+ - the Hockeystick identity,
+ - the catalan identity: that the catalan numbers, as defined
+    by the usual recurrence, equals (1/(n+1))*(2n+1 choose n).
+
+For some or all of these, we will use combinatorial bijections.
+For example, for the Catalan identity, we will use the standard
+proof at https://en.wikipedia.org/wiki/Catalan_number#Second_proof
+-/
+
+/-
+    Machinery for bijective proofs.
+    `has_card` is a Prop that indicates a set is finite
+    and has a certain cardinality.
+
+    Below are several theorems for using a bijection
+    between multiple sets to establish a relation between their
+    sizes.
+-/
+
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
@@ -115,6 +143,12 @@ theorem card_product_nat
             f x y = f x' y' → x = x' ∧ y = y') →
     has_card A a →
     has_card C (a * b) := sorry
+
+/-
+    Here we define the set of boolean sequences of length n with
+    exactly k elements set to `tt`.
+    We show that the cardinality of this set is `choose n k`.
+-/
 
 def count_tt : (list bool) -> ℕ
     | [] := 0

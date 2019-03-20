@@ -4,6 +4,22 @@ import data.list
 import data.int.basic
 import data.nat.gcd
 
+/-
+    Catalan numbers.
+
+    First we define
+    `balanced`: balanced strength of parentheses (`tt` is an 
+    open paren, `ff` is a close paren).
+
+    We define `catalan` by recurence, then show that `catalan n`
+    is the cardinality of the set of balanced strings of length 2n.
+    (theorem `has_card_set_balanced`)
+
+    Then by doing a bijection through paths from (0,0) to (n,n+1),
+    we prove our main result, the theorem
+    `catalan_identity`.
+-/
+
 def balanced_aux : (list bool) → (ℕ) → Prop
     | [] 0 := true
     | [] (d + 1) := false
@@ -244,6 +260,36 @@ begin
     intros , rw [combine_parens] , simp , rw [<- add_assoc] , simp ,
 end
 
+theorem length_split_parens_eq_minus : ∀ (l : list bool) (n:ℕ) (a:ℕ) ,
+    list.length l = 2 * (n + 1) → 
+    balanced l →
+    list.length ((split_parens l).1) = 2 * a →
+    list.length ((split_parens l).2) = 2 * (n - a) :=
+begin
+    intros ,
+    have h :
+        list.length (combine_parens (split_parens l).1 (split_parens l).2) = list.length (split_parens l).1 +
+          list.length (split_parens l).2 + 2 :=
+        begin
+            apply length_combine_parens ,
+            apply balanced_split_parens_1 , assumption ,
+            apply balanced_split_parens_2 , assumption ,
+        end,
+    calc list.length ((split_parens l).2) =
+        list.length (split_parens l).1 + list.length (split_parens l).2 + 2 -
+        (list.length (split_parens l).1 + 2) : begin
+            rw [@nat.add_comm (list.length ((split_parens l).fst)) _] ,
+            rw nat.add_assoc ,
+            rw nat.add_sub_cancel ,
+        end
+    ... = list.length (
+            combine_parens (split_parens l).1 (split_parens l).2) - (list.length (split_parens l).1 + 2) : by rw h 
+    ... = list.length l - (list.length (split_parens l).1 + 2) : sorry
+    ... = list.length l - (2 * a + 2) : by rw a_3
+    ... = 2 * (n + 1) - (2 * a + 2) : by rw a_1
+    ... = 2 * (n - 1) : sorry
+end
+
 theorem even_length_of_balanced_aux : ∀ (l : list bool) (d : ℕ) ,
     balanced_aux l d → 
     (∃ m , list.length l + d = 2 * m)
@@ -297,7 +343,24 @@ end
 theorem length_split_parens_1_le : ∀ (l : list bool) ,
     balanced l →
     ¬(l = list.nil) →
-    list.length (split_parens l).1 ≤ list.length l - 2 := sorry
+    list.length (split_parens l).1 ≤ list.length l - 2 :=
+begin
+    intros ,
+    have h : (combine_parens (split_parens l).1 (split_parens l).2 = l)
+        := combine_parens_split_parens l a a_1 ,
+    have h2 : (list.length (combine_parens (split_parens l).1 (split_parens l).2) = list.length (split_parens l).1 + list.length (split_parens l).2 + 2)
+        :=
+    begin
+        apply length_combine_parens ,
+        apply balanced_split_parens_1 , assumption ,
+        apply balanced_split_parens_2 , assumption ,
+    end,
+    rw h at h2 ,
+    calc list.length ((split_parens l).fst)
+        ≤ list.length ((split_parens l).fst) + list.length ((split_parens l).snd) : by linarith 
+    ... = list.length ((split_parens l).fst) + list.length ((split_parens l).snd) + 2 - 2 : by simp
+    ... = list.length l - 2 : by rw h2
+end
 
 lemma catalan_set_eq_with_bound : ∀ (n:ℕ) ,
     {l : list bool | list.length l = 2 * (n + 1) ∧ balanced l} = 
@@ -459,7 +522,6 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
     begin
         intros ,
         rw [set_balanced, catalan] ,
-        rw [catalan_aux] ,
         apply (card_1 _ []) ,
         simp ,
         intros , simp at a_1 , cases a_1 , cases y ; trivial ,
@@ -467,7 +529,7 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
 | (bound+1) (n+1) :=
     begin
         intros , 
-        rw catalan_recurrence ,
+        rw catalan ,
         rw set_balanced ,
 
         /- add the bound that the first part of the split is < 2*(n+1) -/
@@ -481,7 +543,11 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
         rw j'_h ,
         rw e ,
         clear e ,
-        have e : (sum_to (n + 1) = sum_to j) , rw j'_h, rw e , clear e,
+        have e : (
+                sum_to (n + 1) (λ (i : ℕ) (i_le_n : i < n + 1), catalan i * catalan (n - i))
+                 =
+                sum_to j (λ (i : ℕ) (i_le_n : i < j), catalan i * catalan (n - i))) := by rw j'_h,
+        rw e , clear e,
         have n_bound : (n+1) < (bound+1) := a , /- copy this -/
         have j_bound : j ≤ (n+1) := 
             begin
@@ -496,7 +562,7 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
             apply catalan_set_base ,
         },
         {
-            rw [sum_to] ,
+            rw [sum_to] , simp ,
             rw [@nat.add_comm (catalan j_n * catalan (n - j_n)) _] ,
             apply catalan_set_induction ,
             {
@@ -506,6 +572,10 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                 ... ≤ n + 1 : by assumption
             },
             {
+                /- Show that the length of balanced strings
+                   of the form (A)B where |A|=2*j_n is
+                   catalan j_n * catalan (n-j_n). -/
+
                 clear j_ih ,
                 apply (card_product
                     {l : list bool | list.length l = 2 * j_n ∧      
@@ -537,7 +607,14 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                  {
                     simp, intros ,
                     existsi (split_parens z).1 ,
+                    split ,
+                    split , assumption ,
+                    apply balanced_split_parens_1 , assumption ,
                     existsi (split_parens z).2 ,
+                    split ,
+                    split ,
+                    apply length_split_parens_eq_minus ; assumption ,
+                    apply balanced_split_parens_2 , assumption ,
                     apply combine_parens_split_parens ,
                     assumption ,
                     apply not.intro , intros , subst z , simp at a ,linarith , 
@@ -583,13 +660,20 @@ begin
     linarith ,
 end
 
-/-
-def count_tt_prefix : ℕ → (list bool) -> ℕ
-    | 0 l := 0
-    | (i+1) [] := 0
-    | (i+1) (ff :: l) := count_tt_prefix i l
-    | (i+1) (tt :: l) := count_tt_prefix i l + 1
--/
+/- below_diagonal_path is a proposition that indicates
+   a sequence represents a path
+    from (0,0) to (n, n+1) (where tt is +1 in x direction
+   and ff is +1 in y direction) which always stays below
+   the diagonal.
+
+   We will biject such paths with the balanced parentheses,
+   (theorem `has_card_set_below_diagonal_path_catalan`)
+   which will show that they have cardinality `catalan n`.
+
+   Then we will show that (2n+1) rotations of
+   of these paths will be the set of all paths from (0,0) to (n,n+1),
+   which has number (2n+1 choose n).
+    -/
 
 def below_diagonal_path (n : ℕ) (l : list bool) :=
     list.length l = 2*n + 1 ∧
@@ -1051,4 +1135,18 @@ begin
     {
         apply has_card_set_below_diagonal_path_catalan ,
     },
+end
+
+/- Our main theorem -/
+
+theorem catalan_identity : ∀ (n:ℕ) ,
+    catalan n * (2*n+1) = choose (2*n + 1) n :=
+begin
+    intros ,
+    have h : has_card (set_n_choose_k (2*n+1) n) (catalan n * (2*n+1)) :=
+        has_card_set_n_choose_k_catalan n,
+    have i : has_card (set_n_choose_k (2*n+1) n) (choose (2*n+1) n) :=
+        has_card_set_n_choose_k (2*n+1) n ,
+    apply cardinality_unique (set_n_choose_k (2*n+1) n) _ _ ,
+    assumption, assumption ,
 end
