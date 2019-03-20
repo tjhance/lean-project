@@ -261,52 +261,6 @@ begin
     intros , rw [combine_parens] , simp , rw [<- add_assoc] , simp ,
 end
 
-/- why can't I find these theorems anywhere? -/
-theorem eq_zero_of_le : ∀ (a:ℕ) (b:ℕ) ,
-    a ≤ b → a-b = 0 :=
-begin intros,
-calc a-b = a - (min a b) : by rw nat.sub_min
-    ... = a - a : by simp[min, *]
-    ... = 0 : by simp
-end
-
-theorem nat_mul_sub : ∀ (n:ℕ) (a:ℕ) (b:ℕ) ,
-    n*(a-b) = n*a - n*b := by simp[nat.mul_sub_left_distrib]
-
-/-
-theorem nat_mul_sub : ∀ (n:ℕ) (a:ℕ) (b:ℕ) ,
-    n*(a-b) = n*a - n*b :=
-begin  
-    intros ,
-    by_cases (b ≤ a) ,
-    {
-        have h : (a-b+b = a) :=
-            begin
-                rw add_comm ,
-                apply nat.add_sub_cancel' , assumption ,
-            end,
-        calc n*(a-b)
-            = n*(a-b) + n*b - n*b : by rw nat.add_sub_cancel
-        ... = n*(a-b+b) - n*b : by rw mul_add
-        ... = n*a - n*b : by rw h
-    },
-    {
-        have i1 : a < b := by simp[lt_of_not_ge h],
-        have h : (a-b) = 0 := begin
-            apply eq_zero_of_le , apply le_of_lt , assumption ,
-        end,
-        have j : n*b ≤ n*a := sorry ,
-        have k1 : (n*b - n*a) = 0 := begin
-            apply eq_zero_of_le , assumption ,
-        end,
-        have k2: n*a = n*b + 0 := by simp[sub_eq_of_eq_add k1],
-
-        have k: (n*a - n*b) = 0 := sorry,
-        rw [h, k] , simp , 
-    },
-end
--/
-
 theorem length_split_parens_eq_minus : ∀ (l : list bool) (n:ℕ) (a:ℕ) ,
     list.length l = 2 * (n + 1) → 
     balanced l →
@@ -341,7 +295,7 @@ begin
     ... = 2 * (n + 1) - (2 * a + 2) : by rw a_1
     ... = 2 * (n + 1) - (2 * a + 2 * 1) : by simp
     ... = 2 * (n + 1) - 2 * (a + 1) : by rw [mul_add 2 a 1]
-    ... = 2 * ((n+1) - (a+1)) : by rw [nat_mul_sub 2 (n+1) (a+1)]
+    ... = 2 * ((n+1) - (a+1)) : by rw [nat.mul_sub_left_distrib 2 (n+1) (a+1)]
     ... = 2 * (n - a) : by simp
 end
 
