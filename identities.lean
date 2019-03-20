@@ -17,10 +17,10 @@ import data.list
 /- Our plan is to prove various combinatorial identities.
 In paritcular,
 
- - Vandermonde's identity
- - the Hockeystick identity,
+ - Vandermonde's identity (Katherine's focus)
+ - the Hockeystick identity (Katherine's focus)
  - the catalan identity: that the catalan numbers, as defined
-    by the usual recurrence, equals (1/(n+1))*(2n+1 choose n).
+    by the usual recurrence, equals (1/(n+1))*(2n+1 choose n). (Travis's focus)
 
 For some or all of these, we will use combinatorial bijections.
 For example, for the Catalan identity, we will use the standard
@@ -34,7 +34,7 @@ proof at https://en.wikipedia.org/wiki/Catalan_number#Second_proof
 
     Below are several theorems for using a bijection
     between multiple sets to establish a relation between their
-    sizes.
+    sizes. (Both Travis and Katherine's focus)
 -/
 
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
