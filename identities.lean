@@ -143,7 +143,7 @@ theorem card_product_nat
     has_card C (a * b) := sorry
 
 theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
-    has_card A a → has_card A b → a = b
+    has_card A a → has_card A b → a = b := sorry
 
 /-
     Here we define the set of boolean sequences of length n with
@@ -152,10 +152,10 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     (theorem `has_card_set_n_choose_k`).
 -/
 
-def count_tt : (list bool) -> ℕ
-    | [] := 0
-    | (ff :: l) := count_tt l
-    | (tt :: l) := count_tt l + 1
+def count_tt : (list bool) → (ℕ)
+| [] := 0
+| (ff :: l) := count_tt l
+| (tt :: l) := count_tt l + 1
 
 def set_n_choose_k (n : ℕ) (k : ℕ) : set (list bool) :=
     { l : list bool | list.length l = n ∧ count_tt l = k }

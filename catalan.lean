@@ -262,10 +262,10 @@ end
 
 /- why can't I find these theorems anywhere wtf? -/
 theorem eq_zero_of_le : ∀ (a:ℕ) (b:ℕ) ,
-    b ≥ a → a-b = 0 :=
-begin intros ,
+    a ≤ b → a-b = 0 :=
+begin intros,
 calc a-b = a - (min a b) : by rw nat.sub_min
-    ... = a - a : sorry
+    ... = a - a : by simp[min, *]
     ... = 0 : by simp
 end
 
