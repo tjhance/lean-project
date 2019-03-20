@@ -23,8 +23,6 @@ In paritcular,
     by the usual recurrence, equals (1/(n+1))*(2n+1 choose n). (Travis's focus)
 
 For some or all of these, we will use combinatorial bijections.
-For example, for the Catalan identity, we will use the standard
-proof at https://en.wikipedia.org/wiki/Catalan_number#Second_proof
 -/
 
 /-
@@ -144,10 +142,14 @@ theorem card_product_nat
     has_card A a →
     has_card C (a * b) := sorry
 
+theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
+    has_card A a → has_card A b → a = b
+
 /-
     Here we define the set of boolean sequences of length n with
     exactly k elements set to `tt`.
     We show that the cardinality of this set is `choose n k`.
+    (theorem `has_card_set_n_choose_k`).
 -/
 
 def count_tt : (list bool) -> ℕ

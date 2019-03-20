@@ -260,6 +260,44 @@ begin
     intros , rw [combine_parens] , simp , rw [<- add_assoc] , simp ,
 end
 
+/- why can't I find these theorems anywhere wtf? -/
+theorem eq_zero_of_le : ∀ (a:ℕ) (b:ℕ) ,
+    b ≥ a → a-b = 0 :=
+begin intros ,
+calc a-b = a - (min a b) : by rw nat.sub_min
+    ... = a - a : sorry
+    ... = 0 : by simp
+end
+
+theorem nat_mul_sub : ∀ (n:ℕ) (a:ℕ) (b:ℕ) ,
+    n*(a-b) = n*a - n*b :=
+begin  
+    intros ,
+    by_cases (b ≤ a) ,
+    {
+        have h : (a-b+b = a) :=
+            begin
+                rw add_comm ,
+                apply nat.add_sub_cancel' , assumption ,
+            end,
+        calc n*(a-b)
+            = n*(a-b) + n*b - n*b : by rw nat.add_sub_cancel
+        ... = n*(a-b+b) - n*b : by rw mul_add
+        ... = n*a - n*b : by rw h
+    },
+    {
+        have i : b > a := sorry ,
+        have h : (a-b) = 0 := begin
+            apply eq_zero_of_le , apply le_of_lt , assumption ,
+        end,
+        have j : n*b ≥ n*a := sorry ,
+        have k : (n*a - n*b) = 0 := begin
+            apply eq_zero_of_le , assumption ,
+        end,
+        rw [h, k] , simp , 
+    },
+end
+
 theorem length_split_parens_eq_minus : ∀ (l : list bool) (n:ℕ) (a:ℕ) ,
     list.length l = 2 * (n + 1) → 
     balanced l →
@@ -284,10 +322,18 @@ begin
         end
     ... = list.length (
             combine_parens (split_parens l).1 (split_parens l).2) - (list.length (split_parens l).1 + 2) : by rw h 
-    ... = list.length l - (list.length (split_parens l).1 + 2) : sorry
+    ... = list.length l - (list.length (split_parens l).1 + 2) :
+        begin
+            rw combine_parens_split_parens , assumption ,
+            apply not.intro , intros , subst l , simp at a_1,
+            contradiction ,
+        end
     ... = list.length l - (2 * a + 2) : by rw a_3
     ... = 2 * (n + 1) - (2 * a + 2) : by rw a_1
-    ... = 2 * (n - 1) : sorry
+    ... = 2 * (n + 1) - (2 * a + 2 * 1) : by simp
+    ... = 2 * (n + 1) - 2 * (a + 1) : by rw [mul_add 2 a 1]
+    ... = 2 * ((n+1) - (a+1)) : by rw [nat_mul_sub 2 (n+1) (a+1)]
+    ... = 2 * (n - a) : by simp
 end
 
 theorem even_length_of_balanced_aux : ∀ (l : list bool) (d : ℕ) ,
@@ -708,16 +754,61 @@ theorem best_point_gt (n:ℕ) (l : list bool) (j:ℕ) :
             := sorry
 
 theorem negate_rotation_lt : ∀ (n:ℕ) (i:ℕ) ,
-    0 < n → negate_rotation n i < n := sorry
+    0 < n → negate_rotation n i < n :=
+begin
+    intros, rw [negate_rotation] ,
+    split_ifs , assumption , apply nat.sub_lt_self , assumption ,
+    cases i , contradiction ,
+    have h : (nat.succ i = i + 1) := rfl ,
+    rw h , linarith ,
+end
 
 theorem compose_rotation_lt : ∀ (n:ℕ) (i:ℕ) (j:ℕ) ,
-    0 < n → compose_rotation n i j < n := sorry
+    0 < n → compose_rotation n i j < n :=
+begin
+    intros , rw [compose_rotation] ,
+    apply nat.mod_lt , assumption ,
+end
+
+theorem eq_0_of_dvd_of_lt : ∀ (n:ℕ) (m:ℕ) ,
+    n < m → m ∣ n → n = 0 :=
+begin
+    intros , cases a_1 , cases a_1_w ,
+    simp at a_1_h , assumption ,
+    have h : (nat.succ a_1_w = a_1_w + 1) := rfl ,
+    rw h at a_1_h ,
+    have h2 : n > n := (
+        calc n = m * (a_1_w + 1) : a_1_h
+        ... = m * a_1_w + m*1 : by rw mul_add 
+        ... = m * a_1_w + m : by simp
+        ... ≥ m : by linarith
+        ... > n : a),
+    linarith ,
+end
 
 theorem eq_0_of_compose_negate : ∀ (n:ℕ) (i:ℕ) (j:ℕ) ,
     i < n →
     j < n → 
     compose_rotation n (negate_rotation n i) j = 0 →
-    i = j := sorry
+    i = j :=
+begin
+    intros ,
+    rw [negate_rotation] at a_2 ,
+    rw [compose_rotation] at a_2 ,
+    split_ifs at a_2 ,
+    {
+        simp at a_2 ,
+        have h : (n ∣ j) := begin
+            apply nat.dvd_of_mod_eq_zero , assumption ,
+        end,
+        subst i ,
+        symmetry ,
+        apply (eq_0_of_dvd_of_lt j n) , assumption, assumption ,
+    },
+    {
+        exact sorry
+    }
+end
 
 theorem compose_compose_rotation {α : Type} : ∀ (l:list α) (i:ℕ) (j:ℕ) ,
     i < list.length l → 
