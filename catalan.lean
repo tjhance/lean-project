@@ -424,7 +424,7 @@ theorem even_nat_lt : ∀ (n:ℕ) (m:ℕ) ,
 begin
     intros ,
     by_cases (n = 2 * m + 1) ,
-    {
+    { 
         subst n ,
         /- derive a contradiction from 2 | 2*m + 1
            (surely there was an easier way to do this?) -/
@@ -708,6 +708,61 @@ def negate_rotation (n:ℕ) (i:ℕ) :=
 def compose_rotation (n:ℕ) (i:ℕ) (j:ℕ) :=
     (i + j) % n
 
+theorem func_argmax_ge : ∀ (f: ℕ → ℤ) (n : ℕ) (i : ℕ) ,
+    i ≤ n → 
+    f (argmax f n) ≥ f i
+| f 0 0 :=
+    begin
+        intros , rw [argmax] , linarith ,
+    end
+| f 0 (i+1) :=
+    begin
+        intros , linarith ,
+    end
+| f (n+1) i :=
+    begin
+        intros ,
+        {
+            rw [argmax] , split_ifs ,
+            {
+                rename h h' ,
+                by_cases (i = n+1) ,
+                {
+                    subst i , linarith ,
+                },
+                {
+                    apply le_of_lt ,
+                    have h2 : (i < n+1) := begin
+                        apply nat_lt_of_not_eq, linarith , assumption ,
+                    end,
+                    calc f i ≤ f (argmax f n) :
+                        (begin
+                            apply func_argmax_ge ,
+                            rw <- nat.lt_succ_iff ,
+                            assumption ,
+                        end)
+                    ... < f (n+1) : h'
+                }
+            },
+            {
+                have h' : (f (argmax f n) ≥ f (n + 1)) := begin
+                    apply le_of_not_gt , assumption ,
+                end,
+                by_cases (i=n+1) ,
+                {
+                    subst i , assumption ,
+                },
+                {
+                    have h2 : (i < n+1) := begin
+                        apply nat_lt_of_not_eq, linarith , assumption ,
+                    end,
+                    rw nat.lt_succ_iff at h2 ,
+                    apply func_argmax_ge , assumption,
+                }
+            },
+        }
+    end
+
 theorem best_point_gt (n:ℕ) (l : list bool) (j:ℕ) :
     j < 2 * n + 1 → 
     (int.of_nat n) * (int.of_nat (best_point n l)) -
@@ -715,7 +770,19 @@ theorem best_point_gt (n:ℕ) (l : list bool) (j:ℕ) :
     ≥
     (int.of_nat n) * (int.of_nat j) -
             (2*(int.of_nat n) + 1) * (int.of_nat (count_tt (list.take j l)))
-            := sorry
+            :=
+begin
+    rw [best_point] ,
+    intros ,
+    have ineq : j ≤ (2*n) := begin
+        rw <- nat.lt_succ_iff , assumption ,
+    end,
+    have h := func_argmax_ge (λ (i : ℕ),
+                int.of_nat n * int.of_nat i - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take i l)))
+                (2*n) j ineq ,
+    simp at h ,
+    rw [add_comm] , assumption ,
+end
 
 theorem negate_rotation_lt : ∀ (n:ℕ) (i:ℕ) ,
     0 < n → negate_rotation n i < n :=
