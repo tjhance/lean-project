@@ -1,6 +1,7 @@
 import project.identities
 import tactic.linarith
 import data.list
+import data.list.basic
 import data.int.basic
 import tactic.ring
 import data.nat.gcd
@@ -826,13 +827,29 @@ begin
 end
 
 theorem compose_compose_rotation {α : Type} : ∀ (l:list α) (i:ℕ) (j:ℕ) ,
-    i < list.length l → 
+    i < list.length l →
+    j < list.length l →
     list.drop i
         (list.drop j l ++ list.take j l) ++
       list.take i
         (list.drop j l ++ list.take j l) =
     list.drop (compose_rotation (list.length l) i j) l ++
-    list.take (compose_rotation (list.length l) i j) l := sorry
+    list.take (compose_rotation (list.length l) i j) l :=
+begin
+    intros ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw [compose_rotation] ,
+    rw list.rotate_mod ,
+    rw list.rotate_rotate , rw nat.add_comm ,
+    apply le_of_lt , apply compose_rotation_lt ,
+    linarith ,
+    apply le_of_lt , assumption ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw list.length_rotate , apply le_of_lt, assumption ,
+    apply le_of_lt, assumption,
+end
 
 theorem negate_negate_rotation {α : Type} : ∀ (l:list α) (i:ℕ) ,
     i < list.length l → 
@@ -840,7 +857,25 @@ theorem negate_negate_rotation {α : Type} : ∀ (l:list α) (i:ℕ) ,
         (list.drop i l ++ list.take i l) ++
       list.take (negate_rotation (list.length l) i)
         (list.drop i l ++ list.take i l) =
-    l := sorry
+    l :=
+begin
+    intros ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw <- list.rotate_eq_take_append_drop ,
+    rw [negate_rotation] ,
+    split_ifs ,
+    {
+        subst i , simp , 
+    },
+    {
+        rw list.rotate_rotate , rw add_comm, rw nat.sub_add_cancel ,
+        rw <- list.rotate_mod , simp , apply le_of_lt, assumption,
+    },
+    apply le_of_lt, assumption ,
+    rw <- list.rotate_eq_take_append_drop ,
+    apply le_of_lt , rw list.length_rotate ,
+    apply negate_rotation_lt , linarith , apply le_of_lt, assumption,
+end
 
 theorem best_point_lt_length : ∀ (n : ℕ) (l : list bool) ,
     best_point n l < 1 + 2 * n := sorry
