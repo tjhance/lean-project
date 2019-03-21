@@ -708,6 +708,18 @@ def negate_rotation (n:ℕ) (i:ℕ) :=
 def compose_rotation (n:ℕ) (i:ℕ) (j:ℕ) :=
     (i + j) % n
 
+theorem argmax_lt_length : ∀ (f : ℕ → ℤ) (n : ℕ) ,
+    argmax f n < n+1
+| f 0 := begin intros, rw [argmax] , linarith , end
+| f (n+1) :=
+    begin
+        rw argmax ,
+        split_ifs ,
+        linarith ,
+        have h : argmax f n < n + 1 := argmax_lt_length f n ,
+        linarith ,
+    end
+
 theorem func_argmax_ge : ∀ (f: ℕ → ℤ) (n : ℕ) (i : ℕ) ,
     i ≤ n → 
     f (argmax f n) ≥ f i
@@ -945,7 +957,11 @@ begin
 end
 
 theorem best_point_lt_length : ∀ (n : ℕ) (l : list bool) ,
-    best_point n l < 1 + 2 * n := sorry
+    best_point n l < 1 + 2 * n :=
+begin
+    intros , rw [best_point] , rw (@nat.add_comm 1 (2*n)) ,
+    apply argmax_lt_length ,
+end
 
 theorem count_tt_take_drop : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
     i + p < list.length l → 
