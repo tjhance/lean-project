@@ -1107,6 +1107,19 @@ theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
 theorem eq_of_le_zero : ∀ (a:ℤ) (b:ℤ) ,
     a ≤ 0 → b ≤ 0 → (a+b) = 0 → a = 0 := sorry
 
+theorem gcd_2_n_plus_1 : ∀ (n:ℕ) ,
+    nat.gcd (2*n + 1) n = 1 :=
+begin
+    intros , rw nat.gcd_comm , rw nat.gcd_rec , simp ,
+    /- casework on n=0, n=1, or n=2 -/
+    cases n ,
+    simp ,
+    cases n ,
+    simp ,
+    have h : (nat.succ (nat.succ n)) = n + 2 := rfl , rw h,
+    rw nat.mod_eq_of_lt , simp , linarith ,
+end
+
 theorem below_diagonal_rotation_is_0 : ∀ (n : ℕ) (l : list bool) (i : ℕ) ,
     i < (2*n + 1) →
     below_diagonal_path n l →
@@ -1159,19 +1172,52 @@ begin
 
     have sum_eq_z := (calc
     (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x) +
-    (int.of_nat (2 * n + 1 - i) * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat n - int.of_nat x)) = 0 : sorry),
+    (int.of_nat (2 * n + 1 - i) * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat n - int.of_nat x)) = 0 : begin
+        have two_eq : 2 = int.of_nat 2 := by refl ,
+        rw two_eq ,
+        have one_eq : 1 = int.of_nat 1 := by refl ,
+        rw one_eq ,
+        simp [int.of_nat_mul, int.of_nat_add] ,
+        rw int.of_nat_sub ,
+        simp [int.of_nat_mul, int.of_nat_add] ,
+        ring ,
+        apply le_of_lt, rw add_comm, assumption,
+    end),
 
     have eq_z := (eq_of_le_zero 
         (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x)
     (int.of_nat (2 * n + 1 - i) * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat n - int.of_nat x)) h1 h2 sum_eq_z) ,
 
     have t := (calc
-        i * n = (2*n+1) * x : sorry
+        int.of_nat i * int.of_nat n
+            = int.of_nat i * int.of_nat n - 0 : by ring
+        ... = int.of_nat i * int.of_nat n -
+        (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x) : by rw eq_z
+        ... = (2*int.of_nat n+1) * int.of_nat x : by ring
     ),
-    have gcd1 : (nat.gcd n (2*n+1) = 1) := sorry,
-    have div1 : (2*n + 1) ∣ (i * n) := sorry,
-    have div2 : (2*n + 1) ∣ i := sorry,
-    have i_eq_0 : (i = 0) := sorry,
+    have gcd1 : (nat.gcd (2 * n + 1) n = 1) := gcd_2_n_plus_1 n,
+    have div0: (2 * n + 1) ∣ (2 * n + 1) * x := begin
+        apply dvd_mul_right ,
+    end, 
+    have div1 : (2 * n + 1) ∣ (i * n) := sorry ,
+    have div2 : (2*n + 1) ∣ i :=
+        begin
+            apply (@nat.coprime.dvd_of_dvd_mul_right i n) ,
+            rw [nat.coprime] , assumption , assumption ,
+        end,
+    have i_eq_0 : (i = 0) := begin
+        cases div2 , cases div2_w , simp at div2_h , assumption ,
+        have i_gt_i : (i > i) :=
+            (calc i = (2 * n + 1) * nat.succ div2_w : div2_h
+               ... = (2 * n + 1) * (div2_w + 1) : by refl
+               ... = (2 * n + 1) * (1 + div2_w) : by rw [@nat.add_comm 1]
+               ... = (2 * n + 1) * 1 + (2 * n + 1) * div2_w : by rw mul_add
+               ... = (2 * n + 1) + (2 * n + 1) * div2_w : by simp
+               ... ≥ (2 * n + 1) : by linarith
+               ... > i : by assumption
+            ),
+        linarith ,
+    end,
     assumption ,
 end
 
