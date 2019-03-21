@@ -893,18 +893,12 @@ theorem count_tt_take_drop_2 : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
         int.of_nat (count_tt (list.take p l)) +
         int.of_nat (count_tt (list.take (p+i-list.length l) l)) := sorry
 
-theorem int_of_nat_add : ∀ (a:ℕ) (b:ℕ) ,
-    int.of_nat (a + b) = int.of_nat a + int.of_nat b := sorry
-
-theorem int_of_nat_sub : ∀ (a:ℕ) (b:ℕ) ,
-    b ≤ a →
-    int.of_nat (a - b) = int.of_nat a - int.of_nat b := sorry
-
-theorem int_of_nat_mul : ∀ (a:ℕ) (b:ℕ) ,
-    int.of_nat (a * b) = int.of_nat a * int.of_nat b := sorry
-
 theorem mul_int_of_nat_1 : ∀ (a:ℤ) ,
-    a * (int.of_nat 1) = a := sorry
+    a * (int.of_nat 1) = a :=
+begin
+    have h : int.of_nat 1 = 1 := rfl ,
+    intros , rw h , simp ,
+end
 
 theorem below_diagonal_path_rotate_best_point : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2*n + 1 →
@@ -960,7 +954,7 @@ begin
             (int.of_nat n * int.of_nat p - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take p l))) :
                 begin
                     clear ineq,
-                    simp [add_mul, int_of_nat_add, mul_add] ,
+                    simp [add_mul, int.of_nat_add, mul_add] ,
                     apply mul_comm ,
                 end
             ... ≤ 0 :
@@ -995,8 +989,8 @@ begin
                 begin
                     clear ineq,
                     rw a_1 ,
-                    rw int_of_nat_sub ,
-                    simp [add_mul, int_of_nat_add, mul_add, mul_int_of_nat_1, int_of_nat_mul] ,
+                    rw int.of_nat_sub ,
+                    simp [add_mul, int.of_nat_add, mul_add, mul_int_of_nat_1, int.of_nat_mul] ,
                     rw [int.mul_comm] ,
                     simp ,
                     rw (@int.mul_comm (int.of_nat n) (int.of_nat 2 * int.of_nat n)),
