@@ -1195,11 +1195,14 @@ begin
         (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x) : by rw eq_z
         ... = (2*int.of_nat n+1) * int.of_nat x : by ring
     ),
+    have u : i * n = (2 * n + 1) * x := sorry ,
     have gcd1 : (nat.gcd (2 * n + 1) n = 1) := gcd_2_n_plus_1 n,
     have div0: (2 * n + 1) ∣ (2 * n + 1) * x := begin
         apply dvd_mul_right ,
     end, 
-    have div1 : (2 * n + 1) ∣ (i * n) := sorry ,
+    have div1 : (2 * n + 1) ∣ (i * n) := begin
+        rw <- u at div0 , assumption ,
+    end ,
     have div2 : (2*n + 1) ∣ i :=
         begin
             apply (@nat.coprime.dvd_of_dvd_mul_right i n) ,
@@ -1261,6 +1264,7 @@ begin
                 rw [compose_compose_rotation] ,
                 apply negate_rotation_lt ,
                 rw a_1_left , linarith ,
+                rw a_1_left , assumption ,
             end
         ) ,
     have h : ((compose_rotation (1 + 2 * n) (negate_rotation (1 + 2 * n) i) i') = 0)
@@ -1354,7 +1358,11 @@ begin
             end),
         {
             calc 2 * n + 1 - y + min y (2 * n + 1) = 2 * n + 1 - y + y : by rw e
-            ... = 2 * n + 1 : sorry
+            ... = 2 * n + 1 :
+                begin
+                    rw nat.sub_add_cancel , apply le_of_lt , rw add_comm,
+                    assumption, 
+                end
             ... = 1 + 2 * n : by apply nat.add_comm
         },
         {
