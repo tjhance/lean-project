@@ -769,7 +769,59 @@ begin
         apply (eq_0_of_dvd_of_lt j n) , assumption, assumption ,
     },
     {
-        exact sorry
+        have h : (n ∣ n - i + j) := begin
+            apply nat.dvd_of_mod_eq_zero ,
+            assumption ,
+        end,
+        clear a_2 , cases h ,
+        cases h_w,
+        {
+            /- n - i + j = 0 case (find contradiction) -/
+            have r : (n - i + j > n - i + j) := (
+                calc n - i + j ≥ n - i + 0 : begin
+                    apply nat.add_le_add_left , linarith
+                end
+                ... = n - i : by simp
+                ... > 0: begin
+                    apply nat.sub_pos_of_lt, assumption ,
+                end
+                ... = n * 0 : begin rw mul_zero,  end
+                ... = n - i + j : by rw h_h
+            ),
+            linarith ,
+        },
+        cases h_w ,
+        {
+            /- n - i + j = n case (show i = j) -/
+            rw [mul_one] at h_h ,
+            have h2 : j + (n - i) = n := begin rw add_comm , assumption end,
+            have h3 : (j + n) - i = n := begin rw nat.add_sub_assoc , assumption , apply le_of_lt , assumption, end,
+            have h4 : (j + n) - i + i = n + i := by rw h3 ,
+            have h5 : (j + n) - i + i = (n + j) := begin
+                rw [nat.sub_add_cancel], rw [nat.add_comm], 
+                linarith , 
+            end,
+            have h5 : n + i = n + j := begin
+                rw <- h4 , rw <- h5 , 
+            end,
+            apply (@nat.add_left_cancel n i j) , assumption ,
+        },
+        {
+            /- n - i + j ≥ 2*n case (find contradiction) -/
+            have h2 : nat.succ (nat.succ h_w) = h_w + 2 := rfl ,
+            have h3 : n - i ≤ n := begin
+                    apply nat.sub_le_self ,
+                end,
+            rw h2 at * ,
+            have h3 : n - i + j < n - i + j := (calc
+                n - i + j ≤ n + j : by linarith
+                ... < n + n : by linarith
+                ... ≤ n * h_w + (n + n) : by linarith
+                ... = n * (h_w + 2) : by ring
+                ... = n - i + j : by rw h_h
+            ),
+            linarith
+        }
     }
 end
 
