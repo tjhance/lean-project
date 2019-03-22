@@ -1319,17 +1319,133 @@ theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
 theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
     (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
 
+theorem count_tt_of_balanced_aux : ∀ (l : list bool) (d : ℕ) ,
+    balanced_aux l d →
+    count_tt l * 2 + d = list.length l
+    | [] 0 :=
+        begin
+            intros , simp [count_tt] , 
+        end
+    | [] (d + 1) :=
+        begin
+            intros , simp [balanced_aux] at a , contradiction ,
+        end
+    | (tt :: l) d :=
+        begin
+            intros , simp [count_tt] ,
+            rw add_mul , simp ,
+            have h := count_tt_of_balanced_aux l (d+1) (begin
+                    rw [balanced_aux] at a ,
+                    assumption ,
+                end),
+            linarith ,
+        end
+    | (ff :: l) 0 :=
+        begin
+            intros , simp [balanced_aux] at a , contradiction ,
+        end
+    | (ff :: l) (d + 1) :=
+        begin
+            intros , simp [count_tt] ,
+            have h := count_tt_of_balanced_aux l d (begin
+                    rw [balanced_aux] at a ,
+                    assumption ,
+                end),
+            linarith ,
+        end
+
+theorem count_tt_drop_of_balanced_aux : ∀ (l : list bool) (i : ℕ) (d : ℕ) ,
+    balanced_aux l d →
+    i ≤ list.length l →
+    count_tt (list.drop i l) * 2 + i ≤ list.length l
+    | [] i 0 :=
+        begin
+            intros , simp [list.drop, count_tt] , simp at a_1 ,
+            assumption ,
+        end
+    | [] i (d + 1) :=
+        begin
+            intros , rw [balanced_aux] at a , contradiction ,
+        end
+    | (tt :: l) (i+1) d :=
+        begin
+            intros ,  rw [list.drop] , rw [list.length] ,
+            rw <- add_assoc ,
+            apply add_le_add_right , 
+            apply (count_tt_drop_of_balanced_aux l i (d+1)) ,
+            rw [balanced_aux] at a , assumption ,
+            simp at a_1, linarith ,
+        end
+    | (ff :: l) i 0 :=
+        begin
+            intros, rw [balanced_aux] at a , contradiction ,
+        end
+    | (ff :: l) (i + 1) (d + 1) :=
+        begin
+            intros, rw [list.drop], rw [list.length] ,
+            rw <- add_assoc ,
+            apply add_le_add_right , 
+            apply (count_tt_drop_of_balanced_aux l i d) ,
+            rw [balanced_aux] at a , assumption ,
+            simp at a_1, linarith ,
+        end
+    | l 0 d :=
+        begin
+            simp [list.drop] , intros ,
+            have h := count_tt_of_balanced_aux l d a ,
+            linarith ,
+        end
+
+theorem count_tt_drop_of_balanced : ∀ (l : list bool) (n : ℕ) (i : ℕ) ,
+    balanced l →
+    list.length l = 2 * n →
+    i ≤ list.length l →
+    count_tt (list.drop i l) * 2 + i ≤ 2 * n :=
+begin
+    intros ,
+    rw <- a_1, 
+    apply (count_tt_drop_of_balanced_aux l i 0) ,
+    rw [balanced] at a, assumption ,
+    assumption ,
+end
+
+theorem two_cancel : ∀ (n: ℕ) (m: ℕ),
+    2*n = 2*m → n = m := sorry
+
+theorem count_tt_of_balanced : ∀ (l : list bool) (n : ℕ) ,
+    balanced l → list.length l = 2 * n → count_tt l = n :=
+begin
+    intros ,
+    rw [balanced] at a , 
+    have h := count_tt_of_balanced_aux l 0 a,
+    simp at h ,
+    rw a_1 at h ,
+    rw mul_comm at h ,
+    exact two_cancel _ _ h ,
+end
+
 theorem count_tt_take_of_balanced : ∀ (l : list bool) (n : ℕ) (i : ℕ) ,
     balanced l →
     list.length l = 2 * n →
     i ≤ list.length l →
-    count_tt (list.take i l) * 2 ≥ i := sorry
-
-theorem count_tt_of_balanced : ∀ (l : list bool) (n : ℕ) ,
-    balanced l → list.length l = 2 * n → count_tt l = n := sorry
+    count_tt (list.take i l) * 2 ≥ i :=
+begin
+    intros ,
+    have h := count_tt_drop_of_balanced l n i a a_1 a_2 ,
+    have j := count_tt_of_balanced l n a a_1 ,
+    have q := (calc
+        count_tt (list.take i l) + count_tt (list.drop i l) =
+        count_tt (list.take i l ++ list.drop i l) : by rw count_tt_app
+        ... = count_tt l : by rw list.take_append_drop
+        ... = n : by rw j
+    ),
+    linarith ,
+end
 
 theorem le_of_double_le : ∀ (a:ℤ) ,
-    2 * a ≤ 0 → a ≤ 0 := sorry
+    2 * a ≤ 0 → a ≤ 0 := begin
+    intros, linarith ,
+end
 
 theorem a_minus_b_minus_a_le_zero : ∀ (a:ℤ) (b:ℕ) ,
     a + (-int.of_nat b + -a) ≤ 0 := sorry
