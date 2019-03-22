@@ -1,5 +1,6 @@
 import project.identities
 import tactic.linarith
+import tactic.tidy
 import data.list
 import data.list.basic
 import data.int.basic
@@ -1089,9 +1090,119 @@ begin
 
 end
 
+theorem below_diagonal_path_ends_in_ff_aux :
+    ∀ (n : ℕ) (l : list bool) (d : ℕ) (j_tt : ℕ) (j_ff : ℕ) ,
+    j_tt + j_ff + list.length l = 2*n + 1 →
+    j_tt + count_tt l = n →
+    j_tt = j_ff + d →
+    ¬(l = list.nil) → 
+    (forall (i:ℕ) , j_tt + j_ff ≤ i → i ≤ 2*n + 1 →
+        ((int.of_nat i) * (int.of_nat n) -
+            (2*(int.of_nat n)+1) * (int.of_nat (j_tt + count_tt (list.take (i - (j_tt + j_ff)) l))) ≤ 0)) →
+    (exists t , l = t ++ [ff] ∧ balanced_aux t d)
+| n [] d j_tt j_ff :=
+    begin
+        intros , contradiction , 
+    end
+| n [ff] d j_tt j_ff :=
+    begin
+        intros , existsi list.nil , split , simp , simp at a ,
+        simp [count_tt] at a_1 , rw a_1 at * ,
+        have h := (calc
+            j_ff + (n+1) = n + (j_ff + 1) : by ring
+            ... = 1 + 2 * n : by assumption
+            ... = n + (n+1) : by ring
+        ),
+        have h2 : (j_ff = n) := add_right_cancel h ,
+        rw h2 at * ,
+        have h3 : (n + 0 = n + d) := calc n + 0 = n : by ring ... = n + d : by assumption ,
+        have h4 : (0 = d) := add_left_cancel h3 ,
+        rw <- h4 ,
+        simp [balanced_aux] ,
+    end
+| n [tt] d j_tt j_ff :=
+    begin
+        intros ,
+        simp at a ,
+        simp [count_tt] at a_1 ,
+        have h := a_4 (j_tt + j_ff) (by linarith) (by linarith) ,
+        simp at h , rw [count_tt] at h , simp at h ,
+        have h2 : (j_tt + j_ff = 2*n) := add_right_cancel (calc
+                j_tt + j_ff + 1 =
+                j_tt + (j_ff + 1) : by simp 
+                ... = 1 + 2 * n : by assumption
+                ... = 2*n + 1 : by ring
+            ),
+        rw h2 at h ,
+        rw <- a_1 at h ,
+        simp [int.of_nat_mul, int.of_nat_add] at h ,
+        simp [mul_add] at h ,
+        linarith , 
+    end
+| n (ff :: (x::l)) 0 j_tt j_ff := sorry
+| n (ff :: (x::l)) (d+1) j_tt j_ff :=
+    begin
+        intros ,
+        have b1 : (j_tt + (j_ff + 1) + list.length (x :: l) = 2 * n + 1) := begin
+            simp at a , simp , assumption ,
+            end,
+        have b2 : (j_tt + count_tt (x :: l) = n) := begin
+            simp [count_tt] at a_1 , assumption ,
+            end,
+        have b3 : (j_tt = j_ff + 1 + d) := begin
+            simp at a_2 , simp, assumption,
+            end,
+        have b4 : ¬(((x :: l) : list bool) = (list.nil : list bool)) := begin
+            simp ,
+            end,
+        have b5 : ((∀ (i : ℕ),
+            j_tt + (j_ff + 1) ≤ i →
+            i ≤ 2 * n + 1 →
+            int.of_nat i * int.of_nat n -
+         (2 * int.of_nat n + 1) * int.of_nat (j_tt + count_tt (list.take (i - (j_tt + (j_ff + 1))) (x :: l))) ≤ 0)) :=
+            begin
+                intros ,
+                have t := a_4 i (by linarith) (by linarith) ,
+                have s : (i - (j_tt + (j_ff + 1))) + 1 = (i - (j_tt + j_ff)) := begin
+                        rw <- (add_assoc j_tt) ,
+                        rw <- nat.sub_sub ,
+                        rw nat.sub_add_cancel ,
+                        rw <- add_assoc at a_5 ,
+                        rw add_comm at a_5 ,
+                        rw nat.add_le_to_le_sub at a_5 ,
+                        assumption , linarith ,
+                    end ,
+                rw <- s at t,
+                rw [list.take] at t,
+                assumption ,
+            end,
+        have ih := below_diagonal_path_ends_in_ff_aux n (x::l) d j_tt (j_ff + 1) b1 b2 b3 b4 b5,
+        clear below_diagonal_path_ends_in_ff_aux b1 b2 b3 b4 b5 ,
+        cases ih , rename ih_w l' , existsi ((ff :: l') : list bool) ,
+        cases ih_h , split , rw ih_h_left ,
+        simp ,
+        rw [balanced_aux] , assumption ,
+    end
+| n (tt :: (x::l)) d j_tt j_ff := sorry
+
 theorem below_diagonal_path_ends_in_ff : ∀ (n : ℕ) (l : list bool) ,
     below_diagonal_path n l →
-    (exists t , l = t ++ [ff] ∧ balanced t) := sorry
+    (exists t , l = t ++ [ff] ∧ balanced t) :=
+begin
+    intros ,
+    have h : (∃ (t : list bool), l = t ++ [ff] ∧ balanced_aux t 0) :=
+    begin
+        rw [below_diagonal_path] at a, cases a , cases a_right ,
+        apply (below_diagonal_path_ends_in_ff_aux n l 0 0 0) ,
+        simp , simp at a_left , assumption ,
+        simp , assumption ,
+        simp ,
+        simp , simp at a_right_right , assumption ,
+    end,
+    cases h ,
+    existsi h_w ,
+    rw [balanced] , assumption ,
+end
 
 theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2 * n →
