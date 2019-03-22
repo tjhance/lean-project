@@ -1091,13 +1091,19 @@ begin
 end
 
 theorem le_add_cancel : ∀ (a:ℤ) (b:ℤ) (c:ℤ) ,
-    a + c ≤ b + c → a ≤ b := sorry
+    a + c ≤ b + c → a ≤ b :=
+    begin
+        intros, linarith ,
+    end
 
 theorem nat_le_of_int_le : ∀ (a:ℕ) (b:ℕ) ,
     int.of_nat a ≤ int.of_nat b → a ≤ b := sorry
 
 theorem a_plus_a_plus_1_ge : ∀ (a:ℕ) (b:ℕ) ,
-    a ≥ b → a + a + 1 ≥ b + b + 1 := sorry
+    a ≥ b → a + a + 1 ≥ b + b + 1 :=
+    begin
+        intros, linarith ,
+    end
 
 theorem below_diagonal_path_ends_in_ff_aux :
     ∀ (n : ℕ) (l : list bool) (d : ℕ) (j_tt : ℕ) (j_ff : ℕ) ,
@@ -1307,19 +1313,117 @@ begin
     rw [balanced] , assumption ,
 end
 
-theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
-    list.length l = 2 * n →
-    balanced l →
-    below_diagonal_path n (l ++ [ff]) := sorry
-
 theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
     list.take (list.length a) (a ++ b) = a := sorry
 
 theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
     (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
 
+theorem count_tt_take_of_balanced : ∀ (l : list bool) (n : ℕ) (i : ℕ) ,
+    balanced l →
+    list.length l = 2 * n →
+    i ≤ list.length l →
+    count_tt (list.take i l) * 2 ≥ i := sorry
+
+theorem count_tt_of_balanced : ∀ (l : list bool) (n : ℕ) ,
+    balanced l → list.length l = 2 * n → count_tt l = n := sorry
+
+theorem le_of_double_le : ∀ (a:ℤ) ,
+    2 * a ≤ 0 → a ≤ 0 := sorry
+
+theorem a_minus_b_minus_a_le_zero : ∀ (a:ℤ) (b:ℕ) ,
+    a + (-int.of_nat b + -a) ≤ 0 := sorry
+
+theorem a_minus_b_minus_times_c_le : ∀ (a:ℤ) (b:ℤ) (c:ℤ) (d:ℤ) ,
+    b ≥ 0 →
+    c ≥ d → 
+    a - b * c ≤ a - b * d := sorry
+
+theorem two_n_plus_1_ge : ∀ (a:ℕ) ,
+    2 * (int.of_nat a) + 1 ≥ 0 := sorry
+
+theorem int_of_nat_ge : ∀ (a:ℕ) (b:ℕ) ,
+    a ≥ b →
+    int.of_nat a ≥ int.of_nat b := sorry
+
+theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
+    list.length l = 2 * n →
+    balanced l →
+    below_diagonal_path n (l ++ [ff]) :=
+begin
+    intros , rw [below_diagonal_path] ,
+    split,
+    {
+        simp , assumption ,
+    },
+    split ,
+    {
+        rw count_tt_app , simp [count_tt],
+        apply count_tt_of_balanced , assumption, assumption,
+    },
+    {
+        intros ,
+        by_cases (i = 2*n + 1) ,
+        {
+            have h1 := (calc list.length (l ++ [ff]) = list.length l + 1 : by simp
+            ... = 2*n + 1 :
+                begin
+                    rw a ,
+                end
+            ... = i :
+                begin
+                    rw h ,
+                end),
+            rw <- h1, rw list.take_all , rw h1 ,
+            rw count_tt_app , simp [count_tt], 
+            rw (count_tt_of_balanced l n) ,
+            rw h,
+            simp [int.of_nat_add, int.of_nat_mul] ,
+            apply le_of_eq , refl ,
+            assumption, assumption,
+        },
+        {
+            have h1 := nat_lt_of_not_eq i (2*n+1) (by linarith) (by assumption) , clear a_2 h ,
+            
+            rw list.take_append_of_le_length ,
+            have h2 := count_tt_take_of_balanced l n i a_1 a (begin
+                    rw a , apply nat.le_of_lt_succ ,  assumption ,
+                end),
+            exact (le_of_double_le _ (calc
+                2 * (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take i l)))
+                =
+                2 * int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * (2 * int.of_nat (count_tt (list.take i l))) : by ring
+                ... =
+                2 * int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat 2 * int.of_nat (count_tt (list.take i l))) : rfl
+                ... = 2 * int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat (2 * count_tt (list.take i l))) :
+                    begin
+                        rw int.of_nat_mul ,
+                    end
+                ... ≤ 2 * int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * (int.of_nat i) :
+                    begin
+                        apply a_minus_b_minus_times_c_le,
+                        apply two_n_plus_1_ge ,
+                        apply int_of_nat_ge ,
+                        rw mul_comm , assumption ,
+                    end
+                ... ≤ 0 :
+                    begin
+                        simp [add_mul] ,
+                        rw mul_assoc ,
+                        rw (mul_comm (int.of_nat i) (int.of_nat n)) ,
+                        rw <- mul_assoc ,
+                        simp ,
+                        apply a_minus_b_minus_a_le_zero ,
+                    end
+            )) ,
+
+            rw a , apply nat.le_of_lt_succ, assumption,
+        }
+    }
+end
+
 theorem eq_of_le_zero : ∀ (a:ℤ) (b:ℤ) ,
-    a ≤ 0 → b ≤ 0 → (a+b) = 0 → a = 0 := sorry
+    a ≤ 0 → b ≤ 0 → (a+b) = 0 → a = 0 := begin intros, linarith, end
 
 theorem gcd_2_n_plus_1 : ∀ (n:ℕ) ,
     nat.gcd (2*n + 1) n = 1 :=
