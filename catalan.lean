@@ -1090,6 +1090,15 @@ begin
 
 end
 
+theorem le_add_cancel : ∀ (a:ℤ) (b:ℤ) (c:ℤ) ,
+    a + c ≤ b + c → a ≤ b := sorry
+
+theorem nat_le_of_int_le : ∀ (a:ℕ) (b:ℕ) ,
+    int.of_nat a ≤ int.of_nat b → a ≤ b := sorry
+
+theorem a_plus_a_plus_1_ge : ∀ (a:ℕ) (b:ℕ) ,
+    a ≥ b → a + a + 1 ≥ b + b + 1 := sorry
+
 theorem below_diagonal_path_ends_in_ff_aux :
     ∀ (n : ℕ) (l : list bool) (d : ℕ) (j_tt : ℕ) (j_ff : ℕ) ,
     j_tt + j_ff + list.length l = 2*n + 1 →
@@ -1102,10 +1111,12 @@ theorem below_diagonal_path_ends_in_ff_aux :
     (exists t , l = t ++ [ff] ∧ balanced_aux t d)
 | n [] d j_tt j_ff :=
     begin
+        /- theorem only applies to non-empty lists -/
         intros , contradiction , 
     end
 | n [ff] d j_tt j_ff :=
     begin
+        /- list ends in ff: easy -/
         intros , existsi list.nil , split , simp , simp at a ,
         simp [count_tt] at a_1 , rw a_1 at * ,
         have h := (calc
@@ -1122,6 +1133,7 @@ theorem below_diagonal_path_ends_in_ff_aux :
     end
 | n [tt] d j_tt j_ff :=
     begin
+        /- list ends in tt: contradiction -/
         intros ,
         simp at a ,
         simp [count_tt] at a_1 ,
@@ -1139,9 +1151,49 @@ theorem below_diagonal_path_ends_in_ff_aux :
         simp [mul_add] at h ,
         linarith , 
     end
-| n (ff :: (x::l)) 0 j_tt j_ff := sorry
+| n (ff :: (x::l)) 0 j_tt j_ff :=
+    begin
+        /- step up crossing the diagonal: contradiction -/
+        intros ,
+        /- substitute j_tt = j_ff -/
+        simp at a_2 , rw a_2 at * ,
+        /- the point (j_ff, j_ff + 1) is above the diagonal,
+           that's where we derive the contradiction -/
+        have h := a_4 (j_ff + j_ff + 1) (by linarith)
+            (begin
+                simp at a , linarith ,
+            end),
+        rwa (@nat.add_comm (j_ff + j_ff) 1) at h,
+        rw nat.add_sub_cancel at h,
+        simp [list.take, count_tt] at h,
+        simp [int.of_nat_add, add_mul] at h,
+        rw <- add_assoc at h ,
+        /-have q : (2 * int.of_nat j_ff * int.of_nat n) = (int.of_nat j_ff * int.of_nat n) + (int.of_nat j_ff * int.of_nat n) := begin
+             rw <- two_mul ,
+            end,-/
+        have r : int.of_nat 1 = 1 := rfl ,
+        /-rw <- q at h ,-/
+        rw r at  h,
+        rw <- two_mul at h,
+        simp at h,
+        rw (mul_comm (int.of_nat j_ff) (int.of_nat n)) at h ,
+        rw mul_assoc at h ,
+        have h2 : int.of_nat n ≤ int.of_nat j_ff := le_add_cancel (int.of_nat n) (int.of_nat j_ff) (2 * (int.of_nat n * int.of_nat j_ff)) h ,
+        have h3 : n ≤ j_ff := nat_le_of_int_le n j_ff h2 ,
+        have h4 : 2*n + 1 > 2*n + 1 := (calc 
+            2 * n + 1 = j_ff + j_ff + list.length (ff :: x :: l) : by rw a
+            ... = j_ff + j_ff + 1 + 1 + list.length l : begin
+                simp , rw <- add_assoc , simp ,
+            end
+            ... > j_ff + j_ff + 1 : by linarith
+            ... ≥ n + n + 1 : a_plus_a_plus_1_ge j_ff n h3
+            ... = 2*n + 1 : by rw two_mul
+        ),
+        linarith ,
+    end
 | n (ff :: (x::l)) (d+1) j_tt j_ff :=
     begin
+        /- step up without crossing the diagonal -/
         intros ,
         have b1 : (j_tt + (j_ff + 1) + list.length (x :: l) = 2 * n + 1) := begin
             simp at a , simp , assumption ,
@@ -1183,7 +1235,58 @@ theorem below_diagonal_path_ends_in_ff_aux :
         simp ,
         rw [balanced_aux] , assumption ,
     end
-| n (tt :: (x::l)) d j_tt j_ff := sorry
+| n (tt :: (x::l)) d j_tt j_ff :=
+    begin
+        intros ,
+            have b1 : (j_tt + 1 + j_ff + list.length (x :: l) = 2 * n + 1) := begin
+                simp , simp at a , assumption ,
+            end ,
+        have b2 : (j_tt + 1 + count_tt (x :: l) = n) :=
+            begin
+                simp [count_tt], simp [count_tt] at a_1 , assumption ,
+            end,
+        have b3 : (j_tt + 1 = j_ff + (d + 1)) :=
+            begin
+                rw a_2 , simp ,
+            end ,
+        have b4 : ¬(((x :: l) : list bool) = list.nil) :=
+            begin
+                simp ,
+            end,
+        have b5 : (∀ (i : ℕ),
+            j_tt + 1 + j_ff ≤ i →
+            i ≤ 2 * n + 1 →
+            int.of_nat i * int.of_nat n -
+            (2 * int.of_nat n + 1) * int.of_nat (j_tt + 1 + count_tt (list.take (i - (j_tt + 1 + j_ff)) (x :: l))) ≤
+            0) :=
+            begin
+                intros ,
+                have t := a_4 i (by linarith) (by linarith) ,
+                have s : (i - (j_tt + (j_ff + 1))) + 1 = (i - (j_tt + j_ff)) := begin
+                        rw <- (add_assoc j_tt) ,
+                        rw <- nat.sub_sub ,
+                        rw nat.sub_add_cancel ,
+                        rw (add_comm j_tt 1) at a_5 ,
+                        rw add_assoc at a_5 ,
+                        rw nat.add_le_to_le_sub at a_5 ,
+                        assumption , linarith ,
+                    end ,
+                rw <- s at t,
+                rw [list.take] at t,
+                rw [count_tt] at t,
+                rw (add_assoc j_tt 1 j_ff) ,
+                simp , simp at t ,
+                assumption ,
+            end ,
+        have ih := below_diagonal_path_ends_in_ff_aux n (x::l) (d+1) (j_tt + 1) j_ff b1 b2 b3 b4 b5 , 
+        clear below_diagonal_path_ends_in_ff_aux b1 b2 b3 b4 b5,
+        cases ih ,
+        rename ih_w l' ,
+        existsi ((tt :: l') : list bool) ,
+        cases ih_h, split,
+        rw ih_h_left , simp ,
+        rw [balanced_aux], assumption,
+    end
 
 theorem below_diagonal_path_ends_in_ff : ∀ (n : ℕ) (l : list bool) ,
     below_diagonal_path n l →
