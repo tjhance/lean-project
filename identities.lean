@@ -143,7 +143,24 @@ theorem card_product_nat
     has_card C (a * b) := sorry
 
 theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
-    has_card A a → has_card A b → a = b := sorry
+    has_card A a → has_card A b → a = b := begin
+    intro h1,
+    intro h2,
+    simp[has_card] at h1,
+    simp[has_card] at h2,
+    apply exists.elim h1,
+    assume a1 l1,
+    apply exists.elim h2,
+    assume a2 l2,
+    have h1: ∀ x: α, x ∈ a1 ↔ x ∈ a2,
+        from sorry,
+    sorry
+    end
+    /- {λ x: α, iff.intro (assume x ∈ a1, sorry) (assume x ∈ a2, sorry)} -/
+    /- def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
+    ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
+            ∧ list.nodup l -/
+
 
 /-
     Here we define the set of boolean sequences of length n with
