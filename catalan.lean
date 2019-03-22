@@ -1447,20 +1447,65 @@ theorem le_of_double_le : ∀ (a:ℤ) ,
     intros, linarith ,
 end
 
+theorem int_of_nat_ge : ∀ (a:ℕ) (b:ℕ) ,
+    a ≥ b →
+    int.of_nat a ≥ int.of_nat b :=
+begin
+    /- ugh, whatever -/
+    intros, induction a, cases b , trivial ,
+    have h : (nat.succ b = b + 1) := rfl ,
+    rw h at * , linarith ,
+    have q : (nat.succ a_n = a_n + 1) := rfl ,
+    rw q at * ,
+    by_cases (a_n + 1 = b) , rw h , linarith ,
+    have r : (a_n ≥ b) := begin
+        have s : (b < a_n + 1) := begin
+            apply nat_lt_of_not_eq , apply nat.lt_succ_of_le ,
+            assumption, apply not.intro , intros ,
+            rw a at h , contradiction ,
+        end,
+        apply nat.le_of_lt_succ , assumption ,
+    end,
+    calc int.of_nat (a_n + 1)
+        = int.of_nat a_n + int.of_nat 1 : by rw int.of_nat_add
+    ... = int.of_nat a_n + 1 : rfl
+    ... ≥ int.of_nat a_n : by linarith
+    ... ≥ int.of_nat b : begin
+            apply a_ih , assumption ,
+        end
+end
+
+theorem int_of_nat_ge_zero : ∀ (n:ℕ) ,
+    int.of_nat n ≥ 0 :=
+begin
+    intros , trivial ,
+end
+
 theorem a_minus_b_minus_a_le_zero : ∀ (a:ℤ) (b:ℕ) ,
-    a + (-int.of_nat b + -a) ≤ 0 := sorry
+    a + (-int.of_nat b + -a) ≤ 0 :=
+begin
+    intros , simp ,
+end
 
 theorem a_minus_b_minus_times_c_le : ∀ (a:ℤ) (b:ℤ) (c:ℤ) (d:ℤ) ,
     b ≥ 0 →
     c ≥ d → 
-    a - b * c ≤ a - b * d := sorry
+    a - b * c ≤ a - b * d :=
+begin
+    intros ,
+    have t : b*d ≤ b*c := begin
+        apply mul_le_mul_of_nonneg_left , assumption, assumption ,
+    end ,
+    linarith ,
+end
 
 theorem two_n_plus_1_ge : ∀ (a:ℕ) ,
-    2 * (int.of_nat a) + 1 ≥ 0 := sorry
-
-theorem int_of_nat_ge : ∀ (a:ℕ) (b:ℕ) ,
-    a ≥ b →
-    int.of_nat a ≥ int.of_nat b := sorry
+    2 * (int.of_nat a) + 1 ≥ 0 :=
+begin
+    intros ,
+    have h : (int.of_nat a ≥ 0) := int_of_nat_ge_zero a ,
+    linarith ,
+end
 
 theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2 * n →
