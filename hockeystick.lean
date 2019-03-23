@@ -50,7 +50,7 @@ end
 /- sum_for_hockey_stick takes m, n, r, and k and computes the sum from k = 0 to i of
 (m choose k)*(n choose r - k), which is what we'll use in Vandermonde's identity 
 with i = r -/
-def sum_for_vandermonde (m n r i: ℕ) : ℕ := 
+def sum_for_vandermonde (m n r i: ℕ) : ℕ :=
 nat.rec_on i ((choose m 0)*(choose n r)) 
 (λ i ih, ih + (choose m (i + 1))*(choose n (r - (i + 1))))
 
@@ -67,8 +67,9 @@ nat.rec_on i ((choose m 0)*(choose n r))
 /- Vandermonde's identity says that m + n choose r equals the 
 sum from k = 0 to r of (m choose k)*(n choose r - k)
 -/
+/- Why does Lean seem to dislike applying the binomial theorem? -/
+/- 
 variables x y: ℕ
-
 theorem binomial_theorem_with_1 (x y n : ℕ) : 
     ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
     begin
@@ -77,14 +78,30 @@ theorem binomial_theorem_with_1 (x y n : ℕ) :
     let h1: y = 1,
     
     rw h1 at h2
-    end
+    end -/
+lemma sum_for_vandermonde_with_n_is_zero (m r: ℕ) : sum_for_vandermonde m 0 r r = choose m r := 
+begin
+induction r with r ih,
+{   calc 
+    sum_for_vandermonde m 0 0 0 = (choose m 0)*(choose 0 0) : by refl
+    ... = choose m 0 : by simp
+    },
+calc 
+    sum_for_vandermonde m 0 (nat.succ r) (nat.succ r) = sorry : sorry
+    ... = choose m (nat.succ r): sorry
+end
 
-    /-(x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m)-/
-
-theorem vandermonde_identity (m n r : ℕ) :
-sum_for_vandermonde m n r r = choose (m + n) r := 
+theorem vandermonde_identity (m n : ℕ) :
+∀ r : ℕ, sum_for_vandermonde m n r r = choose (m + n) r := 
 begin
 induction n with n ih,
-{sorry},
+{simp[choose, sum_for_vandermonde_with_n_is_zero]},
 sorry
 end
+
+/-
+def choose : ℕ → ℕ → ℕ
+| _             0 := 1
+| 0       (k + 1) := 0
+| (n + 1) (k + 1) := choose n k + choose n (succ k)
+-/
