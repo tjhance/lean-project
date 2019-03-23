@@ -31,10 +31,17 @@ of i choose r equals n + 1 choose r + 1 -/
 theorem hockey_stick_identity (k r : ℕ) :
 sum_for_hockey_stick r k = (choose (r + k + 1) (r + 1)) :=
 begin
-induction k,
+induction k with k ih,
 {have h: sum_for_hockey_stick r 0 = 1, by refl,
 simp[*, refl]},
-{sorry}
+{
+    calc sum_for_hockey_stick r (nat.succ k) 
+        = (sum_for_hockey_stick r k) + (choose (r + k + 1) r): by simp[sum_for_hockey_stick]
+    ... = (choose (r + k + 1) (r + 1)) + (choose (r + k + 1) r) : by rw[ih]
+    ... = (choose (r + k + 1) r) + (choose (r + k + 1) (r + 1)): by simp
+    ... = choose (r + k + 1) r + choose (r + k + 1) (nat.succ r) : by refl
+    ... = choose (r + k + 1 + 1) (r + 1) : by rw[←choose]
+}
 end
 
 /- sum_for_hockey_stick takes m, n, r, and k and computes the sum from k = 0 to i of
