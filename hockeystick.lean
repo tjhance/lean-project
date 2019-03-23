@@ -5,8 +5,11 @@ import data.multiset
 import data.finset
 import data.list
 import data.finset algebra.big_operators
+import algebra.big_operators
+import init.algebra.functions
 #eval choose 5 4
 #check nat.rec_on
+
 
 /- Following the proof at https://artofproblemsolving.com/wiki/index.php/Combinatorial_identity -/
 
@@ -64,5 +67,24 @@ nat.rec_on i ((choose m 0)*(choose n r))
 /- Vandermonde's identity says that m + n choose r equals the 
 sum from k = 0 to r of (m choose k)*(n choose r - k)
 -/
+variables x y: ℕ
+
+theorem binomial_theorem_with_1 (x y n : ℕ) : 
+    ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
+    begin
+    have h2: (x + y) ^ n = (finset.range (nat.succ n)).sum (λ m, x ^ m * y ^ (n - m) * ↑(choose n m)), 
+        by apply add_pow x y n,
+    let h1: y = 1,
+    
+    rw h1 at h2
+    end
+
+    /-(x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m)-/
+
 theorem vandermonde_identity (m n r : ℕ) :
-sum_for_vandermonde m n r r = choose (m + n) r := sorry
+sum_for_vandermonde m n r r = choose (m + n) r := 
+begin
+induction n with n ih,
+{sorry},
+sorry
+end
