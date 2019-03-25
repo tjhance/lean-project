@@ -1096,8 +1096,53 @@ theorem le_add_cancel : ∀ (a:ℤ) (b:ℤ) (c:ℤ) ,
         intros, linarith ,
     end
 
+theorem a_plus_1_ge_a : ∀ (a:ℤ) ,
+    a < a + 1 :=
+    begin
+        intros, linarith
+    end
+
+
+theorem a_plus_1_le_b : ∀ (a b:ℕ) ,
+    a < b → a + 1 ≤ b:=
+    begin
+        intros, linarith
+    end
+
+
+theorem nat_succ_a_le_b : ∀ (a b:ℕ) ,
+    a < b → nat.succ a ≤ b:=
+    begin
+        intros a b h,
+        have h: a + 1 ≤ b, from a_plus_1_le_b a b h,
+        have h2: nat.succ a = a + 1 , from rfl,
+        have h3: nat.succ a ≤ a + 1, from le_of_eq h2,
+        exact le_trans h3 h
+    end
+
 theorem nat_le_of_int_le : ∀ (a:ℕ) (b:ℕ) ,
-    int.of_nat a ≤ int.of_nat b → a ≤ b := sorry
+    int.of_nat a ≤ int.of_nat b → a ≤ b := begin
+    intros a b h,
+    induction a,
+    {induction b, {trivial}, simp[int.of_nat_zero, int.of_nat_succ]},
+    have hor: int.of_nat (nat.succ a_n) < int.of_nat b ∨ int.of_nat (nat.succ a_n) = int.of_nat b, 
+        from lt_or_eq_of_le h,
+    apply or.elim hor,
+    {intro caseh, simp[int.of_nat_succ] at caseh, 
+    have transh: int.of_nat a_n < int.of_nat a_n + 1, from a_plus_1_ge_a (int.of_nat a_n),
+    have indh: int.of_nat a_n < int.of_nat b, from lt_trans transh caseh, 
+    have h1: a_n ≤ b, from a_ih (le_of_lt indh),
+    have hor: a_n < b ∨ a_n = b, from lt_or_eq_of_le h1,
+    apply or.elim hor,
+    {intro hor1, exact nat_succ_a_le_b a_n b hor1},
+    intro hor,
+    have nexth: int.of_nat a_n = int.of_nat b, from (congr_arg _) hor,
+    have nothexth:  int.of_nat a_n ≠  int.of_nat b, from ne_of_lt indh,
+    contradiction
+    },
+    intro caseh, rw h at *, have h1: nat.succ a_n = b, from int.no_confusion caseh id,
+    apply le_of_eq h1
+    end
 
 theorem a_plus_a_plus_1_ge : ∀ (a:ℕ) (b:ℕ) ,
     a ≥ b → a + a + 1 ≥ b + b + 1 :=
