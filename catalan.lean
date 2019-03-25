@@ -1095,17 +1095,22 @@ begin
         calc list.length (list.drop (best_point n l) l ++ list.take (best_point n l) l) =
         list.length (list.drop (best_point n l) l) + list.length (list.take (best_point n l) l) : by simp
         ... = list.length (list.take (best_point n l) l) + list.length (list.drop (best_point n l) l) : (by rw [nat.add_comm])
-        ... = list.length (list.take (best_point n l) l ++ list.drop (best_point n l) l) : sorry
-        ... = list.length (l) : sorry
+        ... = list.length (list.take (best_point n l) l ++ list.drop (best_point n l) l) :
+            begin
+                simp , rw min_eq_left , rw nat.sub_add_cancel ,
+                apply le_of_lt , rw a , simp , apply best_point_lt_length ,
+                apply le_of_lt , rw a , simp , apply best_point_lt_length ,
+            end
+        ... = list.length (l) : by rw list.take_append_drop
         ... = 2 * n + 1 : (by rw a)
     },
     split ,
     {
         calc count_tt (list.drop (best_point n l) l ++ list.take (best_point n l) l) =
-        count_tt (list.drop (best_point n l) l) + count_tt (list.take (best_point n l) l) : sorry
+        count_tt (list.drop (best_point n l) l) + count_tt (list.take (best_point n l) l) : by rw count_tt_app
         ... = count_tt (list.take (best_point n l) l) + count_tt (list.drop (best_point n l) l) : (by rw [nat.add_comm])
-        ... = count_tt (list.take (best_point n l) l ++ list.drop (best_point n l) l) : sorry
-        ... = count_tt (l) : sorry
+        ... = count_tt (list.take (best_point n l) l ++ list.drop (best_point n l) l) : by rw count_tt_app
+        ... = count_tt (l) : by rw list.take_append_drop
         ... = n : (by rw a_1)
     },
     {
@@ -1147,7 +1152,11 @@ begin
         {
             have ineq := best_point_gt n l (p + i - (2*n+1))
                 (begin
-                    exact sorry
+                    have h : (p < (2*n+1)) := begin
+                        rw p_eq , simp , apply best_point_lt_length ,
+                    end,
+                    rw nat.sub_lt_left_iff_lt_add ,
+                    linarith , linarith ,
                 end),
             rw [<- p_eq] at ineq ,
 
@@ -1202,19 +1211,11 @@ theorem a_plus_1_ge_a : ∀ (a:ℤ) ,
         intros, linarith
     end
 
-
-theorem a_plus_1_le_b : ∀ (a b:ℕ) ,
-    a < b → a + 1 ≤ b :=
-    begin
-        intros, linarith,
-    end
-
-
 theorem nat_succ_a_le_b : ∀ (a b:ℕ) ,
     a < b → nat.succ a ≤ b:=
     begin
         intros a b h,
-        have h: a + 1 ≤ b, from a_plus_1_le_b a b h,
+        have h: a + 1 ≤ b, from nat.succ_le_of_lt h,
         have h2: nat.succ a = a + 1 , from rfl,
         have h3: nat.succ a ≤ a + 1, from le_of_eq h2,
         exact le_trans h3 h
@@ -1451,6 +1452,9 @@ begin
         simp , simp at a_left , assumption ,
         simp , assumption ,
         simp ,
+        apply not.intro , intros , rw a at * , simp at a_left ,
+        have h := (calc 0 = 1 + 2 * n : a_left ... > 0 : by linarith),
+        linarith ,
         simp , simp at a_right_right , assumption ,
     end,
     cases h ,
@@ -1549,7 +1553,14 @@ begin
 end
 
 theorem two_cancel : ∀ (n: ℕ) (m: ℕ),
-    2*n = 2*m → n = m := sorry
+    2*n = 2*m → n = m :=
+begin
+    intros ,
+    have h : ((2*n) / 2) = ((2*m) / 2) := by rw a ,
+    rw mul_comm at h , rw nat.mul_div_cancel at h ,
+    rw mul_comm at h , rw nat.mul_div_cancel at h ,
+    assumption, linarith , linarith ,
+end
 
 theorem count_tt_of_balanced : ∀ (l : list bool) (n : ℕ) ,
     balanced l → list.length l = 2 * n → count_tt l = n :=
@@ -1754,19 +1765,20 @@ begin
         apply le_of_lt , assumption ,
     end),
     have h2 := a_2_right_right ((2*n + 1) - i) (begin
-        exact sorry /- should be easy -/
+        apply nat.sub_le_self ,
     end),
     clear a_1_right_right , clear a_2_right_right ,
 
     have f := (
-        calc list.length (list.drop i l) = (list.length l - i) : sorry
-         ... = 2*n + 1 - i : sorry
+        calc list.length (list.drop i l) = (list.length l - i) :
+            by rw list.length_drop
+         ... = 2*n + 1 - i :
+            by rw a_1_left
     ),
     have e : ((list.take (2 * n + 1 - i) (list.drop i l ++ list.take i l))
         = list.drop i l) :=
         begin
             rw <- f ,
-            apply list.take_app
             apply take_app ,
         end,
     rw e at h2 ,
@@ -1774,14 +1786,14 @@ begin
         int.of_nat (count_tt (list.drop i l)) = 
             int.of_nat (count_tt (list.take i l)) +
             int.of_nat (count_tt (list.drop i l)) -
-            int.of_nat (count_tt (list.take i l)) : sorry
+            int.of_nat (count_tt (list.take i l)) : by ring
         ... = int.of_nat (count_tt (list.take i l) + count_tt (list.drop i l)) -
-              int.of_nat (count_tt (list.take i l)) : sorry
+              int.of_nat (count_tt (list.take i l)) : by rw int.of_nat_add
         ... = int.of_nat (count_tt (list.take i l ++ list.drop i l)) -
-              int.of_nat (count_tt (list.take i l)) : sorry
+              int.of_nat (count_tt (list.take i l)) : by rw count_tt_app
         ... = int.of_nat (count_tt l) -
-              int.of_nat (count_tt (list.take i l)) : sorry
-        ... = int.of_nat n - int.of_nat (count_tt (list.take i l)) : sorry
+              int.of_nat (count_tt (list.take i l)) : by rw list.take_append_drop
+        ... = int.of_nat n - int.of_nat (count_tt (list.take i l)) : by rw a_1_right_left
     ),
     rw g at h2 ,
 
