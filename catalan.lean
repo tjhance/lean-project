@@ -528,7 +528,11 @@ end
 lemma has_card_set_balanced_aux : ∀ bound n ,
     n < bound →
     has_card (set_balanced n) (catalan n)
-| 0 n := sorry
+| 0 n :=
+    begin
+        intros ,
+        linarith ,
+    end
 | (bound+1) 0 :=
     begin
         intros ,
@@ -604,8 +608,11 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                      rw [combine_parens] , simp , rw a , rw a_2 ,
                      {
                         calc 1 + (1 + (2 * j_n + 2 * (n - j_n))) = 2 * (n + 1) : begin
-                            rw [mul_add] ,
-                            exact sorry
+                            rw [<- mul_add] ,
+                            rw [add_comm j_n] ,
+                            rw [nat.sub_add_cancel] , ring,
+                            have h : (nat.succ j_n = j_n + 1) := rfl ,
+                            rw h at j_bound , linarith ,
                         end
                      },
                      {
@@ -652,11 +659,15 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
                  },
                  {
                      apply (has_card_set_balanced_aux bound) ,
-                     exact sorry /- should be easy -/
+                     have h : (nat.succ j_n = j_n + 1) := rfl ,
+                     rw h at j_bound , linarith ,
                  },
                  {
                      apply (has_card_set_balanced_aux bound) ,
-                     exact sorry /- should be easy -/
+                     have h : (nat.succ j_n = j_n + 1) := rfl ,
+                     rw h at j_bound ,
+                     have t : (n - j_n ≤ n) := nat.sub_le_self _ _ ,
+                     linarith ,
                  },
             }
         }
@@ -964,18 +975,91 @@ begin
     apply argmax_lt_length ,
 end
 
+theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
+    list.take (list.length a) (a ++ b) = a := sorry
+
+theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
+    (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
+
+theorem take_append_of_ge_length {α : Type} : ∀ (i : ℕ) 
+    (a : list α) (b : list α) ,
+    list.take (list.length a + i) (a ++ b) = a ++ list.take i b :=
+sorry
+
 theorem count_tt_take_drop : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
     i + p < list.length l → 
     int.of_nat (count_tt (list.take i (list.drop p l ++ list.take p l))) =
     int.of_nat (count_tt (list.take (p+i) l)) -
-        int.of_nat (count_tt (list.take p l)) := sorry
+        int.of_nat (count_tt (list.take p l)) :=
+begin
+    intros ,
+    rw list.take_append_of_le_length ,
+    have h : (
+            int.of_nat (count_tt (list.take i (list.drop p l))) +
+            int.of_nat (count_tt (list.take p l)) =
+            int.of_nat (count_tt (list.take (p + i) l))) :=
+        begin
+            rw add_comm ,
+            rw [<- int.of_nat_add] ,
+            rw [<- count_tt_app] ,
+            rw [<- take_append_of_ge_length] ,
+            rw [list.take_append_drop] ,
+            rw [list.length_take] ,
+            rw [min_eq_left] ,
+            linarith ,
+        end,
+    rw <- h , ring ,
+    rw list.length_drop ,
+    rw <- nat.add_le_to_le_sub ,
+    apply le_of_lt , assumption , linarith ,
+end
 
 theorem count_tt_take_drop_2 : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
     p + i ≥ list.length l → 
+    i ≤ list.length l →
+    p ≤ list.length l →
     int.of_nat (count_tt (list.take i (list.drop p l ++ list.take p l))) =
         int.of_nat (count_tt l) -
         int.of_nat (count_tt (list.take p l)) +
-        int.of_nat (count_tt (list.take (p+i-list.length l) l)) := sorry
+        int.of_nat (count_tt (list.take (p+i-list.length l) l)) :=
+begin
+    intros ,
+    have h : (i = list.length (list.drop p l) + (p+i-list.length l)) :=
+        begin
+            rw list.length_drop ,
+            have h' : int.of_nat i = int.of_nat (list.length l - p + (p + i - list.length l)) := begin
+                rw int.of_nat_add , rw int.of_nat_sub , rw int.of_nat_sub ,
+                rw int.of_nat_add , ring , assumption , assumption ,
+            end,
+            simp at h' , simp , assumption ,
+        end,
+    have h2 := (calc
+        int.of_nat (count_tt (list.take i (list.drop p l ++ list.take p l)))
+        = 
+        int.of_nat (count_tt (list.take (list.length (list.drop p l) + (p+i-list.length l)) (list.drop p l ++ list.take p l))) : by rw <- h
+    ),
+    rw h2, clear h2 , clear h ,
+    rw take_append_of_ge_length ,
+    rw list.take_take , rw min_eq_left ,
+    rw count_tt_app , rw int.of_nat_add ,
+
+    have q : int.of_nat (count_tt (list.drop p l)) =
+    int.of_nat (count_tt l) - int.of_nat (count_tt (list.take p l)) :=
+        begin
+            have t :
+                int.of_nat (count_tt (list.take p l)) + int.of_nat (count_tt (list.drop p l)) = int.of_nat (count_tt l) :=
+                    begin
+                        rw <- int.of_nat_add, rw <- count_tt_app ,
+                        rw list.take_append_drop ,
+                    end,
+            rw <- t, ring ,
+        end,
+
+    rw q ,
+
+    rw nat.sub_le_iff , rw (nat.add_comm p i) , rw nat.add_sub_cancel ,
+    assumption ,
+end
 
 theorem mul_int_of_nat_1 : ∀ (a:ℤ) ,
     a * (int.of_nat 1) = a :=
@@ -1065,7 +1149,9 @@ begin
                 begin
                     rw count_tt_take_drop_2 ,
                     rw a ,
-                    linarith ,
+                    linarith , linarith ,
+                    rw a , simp , rw p_eq , apply le_of_lt ,
+                    apply best_point_lt_length ,
                 end
             ... =
             (int.of_nat n * int.of_nat (p + i - (2*n+1)) - (2 * int.of_nat n + 1) * int.of_nat (count_tt (list.take (p + i - (2*n+1)) l))) -
@@ -1358,12 +1444,6 @@ begin
     rw [balanced] , assumption ,
 end
 
-theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
-    list.take (list.length a) (a ++ b) = a := sorry
-
-theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
-    (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
-
 theorem count_tt_of_balanced_aux : ∀ (l : list bool) (d : ℕ) ,
     balanced_aux l d →
     count_tt l * 2 + d = list.length l
@@ -1518,7 +1598,7 @@ begin
     ... ≥ int.of_nat b : begin
             apply a_ih , assumption ,
         end
-end
+end 
 
 theorem int_of_nat_ge_zero : ∀ (n:ℕ) ,
     int.of_nat n ≥ 0 :=
