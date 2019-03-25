@@ -67,22 +67,21 @@ nat.rec_on i ((choose m 0)*(choose n r))
 /- Vandermonde's identity says that m + n choose r equals the 
 sum from k = 0 to r of (m choose k)*(n choose r - k)
 -/
-/- Why does Lean seem to dislike applying the binomial theorem? -/
-/- 
 variables x y: ℕ
+
 theorem binomial_theorem_with_1 (x y n : ℕ) : 
     ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
     begin
-    have h2: (x + y) ^ n = (finset.range (nat.succ n)).sum (λ m, x ^ m * y ^ (n - m) * ↑(choose n m)), 
-        by apply add_pow x y n,
-    let h1: y = 1,
-    
-    rw h1 at h2
-    end -/
+    intro n,
+    have h3 := add_pow x 1 n,
+    simp at h3, apply h3
+    end 
+
 lemma sum_for_vandermonde_with_n_is_zero (m r: ℕ) : sum_for_vandermonde m 0 r r = choose m r := 
 begin
 induction r with r ih,
-{   calc 
+{
+   calc 
     sum_for_vandermonde m 0 0 0 = (choose m 0)*(choose 0 0) : by refl
     ... = choose m 0 : by simp
     },
@@ -94,9 +93,9 @@ end
 theorem vandermonde_identity (m n : ℕ) :
 ∀ r : ℕ, sum_for_vandermonde m n r r = choose (m + n) r := 
 begin
-induction n with n ih,
+induction n with n ih1,
 {simp[choose, sum_for_vandermonde_with_n_is_zero]},
-sorry
+intro r, simp[sum_for_vandermonde, choose], sorry
 end
 
 /-
