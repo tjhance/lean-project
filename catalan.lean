@@ -976,15 +976,29 @@ begin
 end
 
 theorem take_app {α : Type} : ∀ (a : list α) (b : list α) ,
-    list.take (list.length a) (a ++ b) = a := sorry
+    list.take (list.length a) (a ++ b) = a :=
+begin
+    intros , rw list.take_append_of_le_length , rw list.take_all ,
+    trivial ,
+end
 
 theorem count_tt_app : ∀ (a : list bool) (b : list bool) ,
-    (count_tt (a ++ b)) = (count_tt a) + (count_tt b) := sorry
+    (count_tt (a ++ b)) = (count_tt a) + (count_tt b) :=
+begin
+    intros , induction a , simp [count_tt] ,
+    cases a_hd ,
+    simp [count_tt] , rw add_comm , assumption ,
+    simp [count_tt] , rw a_ih , ring , 
+end
 
 theorem take_append_of_ge_length {α : Type} : ∀ (i : ℕ) 
     (a : list α) (b : list α) ,
     list.take (list.length a + i) (a ++ b) = a ++ list.take i b :=
-sorry
+begin
+    intros, induction a, simp ,
+    simp , rw (nat.add_comm 1) , rw <- nat.add_assoc , rw [list.take] ,
+    rw nat.add_comm , rw a_ih , 
+end
 
 theorem count_tt_take_drop : ∀ (i:ℕ) (p:ℕ) (l:list bool) ,
     i + p < list.length l → 
@@ -1190,9 +1204,9 @@ theorem a_plus_1_ge_a : ∀ (a:ℤ) ,
 
 
 theorem a_plus_1_le_b : ∀ (a b:ℕ) ,
-    a < b → a + 1 ≤ b:=
+    a < b → a + 1 ≤ b :=
     begin
-        intros, linarith
+        intros, linarith,
     end
 
 
@@ -1752,6 +1766,7 @@ begin
         = list.drop i l) :=
         begin
             rw <- f ,
+            apply list.take_app
             apply take_app ,
         end,
     rw e at h2 ,
