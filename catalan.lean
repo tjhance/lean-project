@@ -244,15 +244,103 @@ begin
     assumption ,
 end
 
+theorem split_parens_combine_parens_aux : ∀ (l : list bool) (m : list bool) (d:ℕ) ,
+    balanced_aux l d →
+    balanced m →
+    split_parens_aux (l ++ ff :: m) (d+1) = ⟨l, m⟩
+| [] m 0 :=
+    begin
+        intros , simp [split_parens_aux] ,
+    end
+| [] m (d + 1) :=
+    begin
+        intros , simp [balanced_aux] at a , contradiction ,
+    end
+| (tt :: l) m d :=
+    begin
+        intros ,
+        simp [split_parens_aux] ,
+        have q : balanced_aux l (d+1) := begin
+            rw [balanced_aux] at a , assumption ,
+        end,
+        have h := split_parens_combine_parens_aux l m (d+1) q a_1,
+        simp at h , rw h , simp , 
+    end
+| (ff :: l) m 0 :=
+    begin
+        intros ,
+        simp [balanced_aux] at a , contradiction ,
+    end
+| (ff :: l) m (d + 1) :=
+    begin
+        intros ,
+        simp [split_parens_aux] ,
+        have q : balanced_aux l d := begin
+            rw [balanced_aux] at a , assumption ,
+        end,
+        have h := split_parens_combine_parens_aux l m d q a_1,
+        rw h , simp , 
+    end
+
 theorem split_parens_combine_parens : ∀ (l : list bool) (m : list bool) ,
     balanced l →
     balanced m →
-    split_parens (combine_parens l m) = ⟨l, m⟩ := sorry
+    split_parens (combine_parens l m) = ⟨l, m⟩ :=
+begin
+    intros ,
+    rw [combine_parens],
+    have h : (tt :: l ++ ff :: m = tt :: (l ++ ff :: m)) := by simp,
+    rw h,
+    rw [split_parens] ,
+    apply split_parens_combine_parens_aux ,
+    rw [balanced] at a , assumption ,
+    assumption ,
+end
+
+theorem combine_parens_split_parens_aux : ∀ (l : list bool) (d:ℕ) ,
+    balanced_aux l (d+1) →
+    (split_parens_aux l (d+1)).1 ++ ff :: (split_parens_aux l (d+1)).2 = l
+| [] d :=
+    begin
+        intros , rw [balanced_aux] at a , contradiction ,
+    end
+| (tt :: l) d :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp ,
+        rw [balanced_aux] at a ,
+        have h := combine_parens_split_parens_aux l (d+1) a,
+        simp at a h, assumption,
+    end
+| (ff :: l) 0 :=
+    begin
+        intros , rw [balanced_aux] at a ,
+        rw [split_parens_aux] , simp ,
+    end
+| (ff :: l) (d+1) :=
+    begin
+        intros ,
+        rw [split_parens_aux] , simp ,
+        rw [balanced_aux] at a ,
+        have h := combine_parens_split_parens_aux l d a,
+        assumption,
+    end
 
 theorem combine_parens_split_parens : ∀ (l : list bool) ,
     balanced l →
     ¬(l = list.nil) → 
-    combine_parens (split_parens l).1 (split_parens l).2 = l := sorry
+    combine_parens (split_parens l).1 (split_parens l).2 = l :=
+begin
+    intros ,
+    cases l ,
+    simp at a_1, contradiction ,
+    cases l_hd ,
+    rw [balanced, balanced_aux] at a , contradiction ,
+    rw [split_parens] , rw [combine_parens] , simp ,
+    apply combine_parens_split_parens_aux ,
+    simp , rw [balanced] at a , rw [balanced_aux] at a , simp at a ,
+    assumption ,
+end
 
 theorem length_combine_parens : ∀ (l : list bool) (m : list bool) ,
     balanced l →
@@ -1826,7 +1914,17 @@ begin
         (int.of_nat i * int.of_nat n - (2 * int.of_nat n + 1) * int.of_nat x) : by rw eq_z
         ... = (2*int.of_nat n+1) * int.of_nat x : by ring
     ),
-    have u : i * n = (2 * n + 1) * x := sorry ,
+    have t' : (int.of_nat (i * n) = int.of_nat ((2 * n + 1) * x)) :=
+        begin
+            simp [int.of_nat_add, int.of_nat_mul] ,
+            have one' : (int.of_nat 1 = 1) := rfl ,
+            have two' : (int.of_nat 2 = 2) := rfl ,
+            rw one', rw two',
+            simp at t , assumption ,
+        end,
+    have u : i * n = (2 * n + 1) * x := begin
+            simp at t' , simp, assumption,
+        end ,
     have gcd1 : (nat.gcd (2 * n + 1) n = 1) := gcd_2_n_plus_1 n,
     have div0: (2 * n + 1) ∣ (2 * n + 1) * x := begin
         apply dvd_mul_right ,
@@ -2002,7 +2100,7 @@ begin
                 = count_tt (list.drop y x) + count_tt (list.take y x) : by rw count_tt_app
             ... = count_tt (list.take y x) + count_tt (list.drop y x) : by rw nat.add_comm
             ... = count_tt (list.take y x ++ list.drop y x) : by rw count_tt_app
-            ... = count_tt x : sorry
+            ... = count_tt x : by rw list.take_append_drop
             ... = n : by rw a_right_left
         },
     },
