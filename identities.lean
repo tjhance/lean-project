@@ -401,6 +401,29 @@ begin
     }
 end 
 
+theorem has_card_nats_lt (n : ℕ) :
+    has_card { i : ℕ | i < n } n :=
+begin
+    rw [has_card] , existsi (list.range n) ,
+    split ,
+    {
+        apply list.length_range ,
+    },
+    split ,
+    {
+        intros , split ,
+        {
+            simp ,
+        },
+        {
+            simp , 
+        }
+    },
+    {
+        apply list.nodup_range ,
+    }
+end
+
 theorem card_product_nat
     {α : Type} {γ : Type}
         (A : set α) (b : ℕ) (C : set γ) (a : ℕ)
@@ -411,7 +434,45 @@ theorem card_product_nat
             x ∈ A → x' ∈ A → 0 ≤ y → y < b → 0 ≤ y' → y' < b →
             f x y = f x' y' → x = x' ∧ y = y') →
     has_card A a →
-    has_card C (a * b) := sorry
+    has_card C (a * b) :=
+begin
+    intros ,
+    apply (card_product A { i : ℕ | i < b } C a b
+        (λ x , λ i , f x i)) ,
+    {
+        intros , simp , simp at a_6 ,
+        exact (a_1 x y a_5 (by simp) a_6) ,
+    },
+    {
+        intros , simp ,
+        have h := a_2 z a_5 ,
+        cases h , cases h_h , rename h_w x , rename h_h_w y ,
+        cases h_h_h , cases h_h_h_right , cases h_h_h_right_right ,
+        existsi x , split , assumption , existsi y , split , assumption ,
+        assumption ,
+    },
+    {
+        exact (
+            λ (x : α) (y : ℕ) (x' : α) (y' : ℕ),
+            λ (x_in_A : x ∈ A) ,
+            λ (x'_in_A : x' ∈ A) ,
+            λ (y_in : y ∈ {i : ℕ | i < b}) ,
+            λ (y'_in : y' ∈ {i : ℕ | i < b}) ,
+            begin
+                simp , intros ,
+                simp at y_in ,
+                simp at y'_in ,
+                exact (a_3 x y x' y' x_in_A x'_in_A (by simp) y_in (by simp) y'_in a_5) ,
+            end
+        )
+    },
+    {
+        assumption ,
+    },
+    {
+        apply has_card_nats_lt ,
+    },
+end
 
 theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     has_card A a → has_card A b → a = b := begin
