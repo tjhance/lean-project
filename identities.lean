@@ -4,6 +4,8 @@ import data.set.finite
 import data.multiset
 import data.list
 
+import classical
+
 #check set
 #check finset ℕ 
 #check @finset.mk
@@ -66,11 +68,48 @@ theorem card_bijection
 
 theorem card_split
     {α : Type} (A : set α) (B : set α) (C : set α) (b : ℕ) (c : ℕ) :
+    (∀ x , x ∈ B → x ∈ A) →
+    (∀ x , x ∈ C → x ∈ A) →
     (∀ x , x ∈ A → (x ∈ B ∨ x ∈ C)) → 
     (∀ x , ¬ (x ∈ B ∧ x ∈ C)) → 
     has_card B b ->
     has_card C c ->
-    has_card A (b+c) := sorry
+    has_card A (b+c) :=
+begin
+    intros,
+    rw [has_card] at * ,
+    cases a_4, cases a_5 ,
+    rename a_4_w l1 , rename a_5_w l2 ,
+    cases a_4_h , cases a_5_h ,
+    cases a_4_h_right, cases a_5_h_right,
+    existsi (l1 ++ l2) ,
+    split ,
+    simp , subst b , subst c ,
+    split ,
+    intros ,
+    split ,
+    intros ,
+    have b_or_c := a_2 x a_4 ,
+    cases b_or_c ,
+    have x_in_l1 := (iff.elim_left (a_4_h_right_left x)) b_or_c ,
+    simp , left , assumption , 
+    have x_in_l2 := (iff.elim_left (a_5_h_right_left x)) b_or_c ,
+    simp , right , assumption , 
+    intros ,
+    simp at a_4 ,
+    cases a_4 ,
+    exact (a x (iff.elim_right (a_4_h_right_left x) a_4)) ,
+    exact (a_1 x (iff.elim_right (a_5_h_right_left x) a_4)) ,
+    apply list.nodup_append_of_nodup , assumption, assumption ,
+    rw list.disjoint_iff_ne ,
+    intros , apply not.intro , intros ,
+    rename b_1 x , rw a_5 at * ,
+    have x_in_b := (iff.elim_right (a_4_h_right_left x) H) ,
+    have x_in_c := (iff.elim_right (a_5_h_right_left x) H_1) ,
+    have x_in_b_and_x_in_c := and.intro x_in_b x_in_c ,
+    have not_x_in_b_and_x_in_c := a_3 x ,
+    contradiction ,
+end
 
 theorem card_split_map
     {α : Type} {β : Type} {γ : Type}
@@ -84,7 +123,53 @@ theorem card_split_map
     (∀ y z , (y ∈ B → z ∈ C → f y = g z → false)) →
     has_card B b ->
     has_card C c ->
-    has_card A (b+c) := sorry
+    has_card A (b+c) :=
+begin
+    intros ,
+    apply (card_split A
+        { x : α | ∃ y , y ∈ B ∧ f y = x }
+        { x : α | ∃ z , z ∈ C ∧ g z = x }
+        b c) ,
+    {
+        intros , simp at a_8 , cases a_8 , rename a_8_w y ,
+        cases a_8_h , subst x , apply (a y) , assumption ,
+    },
+    {
+        intros , simp at a_8 , cases a_8 , rename a_8_w z ,
+        cases a_8_h , subst x , apply (a_1 z) , assumption ,
+    },
+    {
+        simp, intros, apply (a_2 x) , assumption ,
+    },
+    {
+        intros , apply not.intro , simp , intros , 
+        exact (a_5 x_1 x_2 a_8 a_10 (begin
+            rw a_9 , rw a_11 ,
+        end)) ,
+    },
+    {
+        apply (card_bijection
+            B
+            {x : α | ∃ (y : β), y ∈ B ∧ f y = x}
+            b f
+        ),
+        intros , simp , existsi x , split, assumption, trivial,
+        intros , simp at a_8 , cases a_8 , existsi a_8_w , assumption ,
+        intros , exact (a_3 x x' a_8 a_9 a_10) ,
+        assumption ,
+    },
+    {
+        apply (card_bijection
+            C
+            {x : α | ∃ (z : γ), z ∈ C ∧ g z = x}
+            c g
+        ),
+        intros , simp , existsi x , split, assumption, trivial,
+        intros , simp at a_8 , cases a_8 , existsi a_8_w , assumption ,
+        intros , exact (a_4 x x' a_8 a_9 a_10) ,
+        assumption ,
+    },
+end
 
 theorem card_0
     {α : Type} (A : set α) :
@@ -118,6 +203,73 @@ theorem card_1
     exact ⟨(x::[]), and.intro h0 (and.intro h1 h2)⟩
     end
 
+theorem set_induct
+    {α : Type} (A : set α) (a:ℕ) :
+    has_card A (a+1) →
+    (∃ (x:α) (A':set α) ,
+        has_card A' a ∧
+        ¬ (x ∈ A') ∧
+        A = { x' : α | x' ∈ A' ∨ x' = x }
+    ) :=
+begin
+    intros , rw [has_card] at a_1 , cases a_1 , rename a_1_w l ,
+    cases a_1_h ,
+    cases l , simp at a_1_h_left , contradiction ,
+    existsi l_hd ,
+    existsi { x : α | x ∈ A ∧ ¬ (x = l_hd)} ,
+    split ,
+    {
+        rw [has_card] , existsi l_tl ,
+        split , simp at a_1_h_left , rw add_comm at a_1_h_left ,
+        rw add_right_cancel_iff at a_1_h_left , assumption ,
+        cases a_1_h_right ,
+        split ,
+        intros ,
+        split ,
+        simp , intros ,
+        have x_in_l := iff.elim_left (a_1_h_right_left x) a_1,
+        simp at x_in_l , cases x_in_l , contradiction , assumption ,
+        simp , intros ,
+        split ,
+        exact (iff.elim_right (a_1_h_right_left x) (begin
+                simp, right, assumption,
+            end)),
+        rw [list.nodup_cons] at a_1_h_right_right ,
+        apply not.intro , intros , rw a_2 at * , cases a_1_h_right_right ,
+        contradiction ,
+        rw [list.nodup_cons] at a_1_h_right_right ,
+        cases a_1_h_right_right , assumption ,
+    },
+    split ,
+    {
+        simp ,
+    },
+    {
+        apply set.ext ,
+        intros ,
+        split ,
+        {
+            intros , simp , 
+            /- TODO don't actually need classical here
+               (could prove this with x ∈ l_hd :: l_tl
+               and list.nodup (l_hd :: l_tl) instead) -/
+            have c := classical.em (x = l_hd) ,
+            cases c ,
+            right , assumption ,
+            left , split , assumption, assumption,
+        },
+        {
+            simp , intros ,
+            cases a_1 ,
+            cases a_1 , assumption ,
+            cases a_1_h_right , 
+            exact (iff.elim_right (a_1_h_right_left x) (begin
+                rw a_1 , simp , 
+            end)),
+        }
+    }
+end
+
 theorem card_product
     {α : Type} {β : Type} {γ : Type}
         (A : set α) (B : set β) (C : set γ) (a : ℕ) (b : ℕ)
@@ -128,7 +280,126 @@ theorem card_product
             f x y = f x' y' → x = x' ∧ y = y') →
     has_card A a →
     has_card B b →
-    has_card C (a * b) := sorry 
+    has_card C (a * b) :=
+begin
+    revert C , revert A , induction a ,
+    {
+        intros , simp , apply card_0 ,
+        intros ,
+        have h := a_1 y a_5 ,
+        cases h ,
+        cases h_h ,
+        cases h_h_h ,
+        rename h_w a' , have t : a' ∈ A := by assumption ,
+        rw [has_card] at a_3 ,
+        cases a_3 ,
+        cases a_3_h ,
+        rename a_3_w l ,
+        cases l ,
+        have m := a_3_h_right.left a' ,
+        simp at m , contradiction ,
+        simp at a_3_h_left , contradiction ,
+    },
+    {
+        intros ,
+        have h := set_induct A a_n a_3 ,
+        cases h , cases h_h , rename h_w new_x , rename h_h_w A' ,
+        cases h_h_h , cases h_h_h_right , rename h_h_h_right_right A_eq ,
+        have s_eq : (nat.succ a_n = a_n + 1) := rfl ,
+        rw s_eq , rw add_mul , simp ,
+
+        have A'_to_A : (∀ x , x ∈ A' → x ∈ A) := (λ x , λ x_in_A' ,
+            begin
+                rw A_eq , simp , left , assumption ,
+            end
+        ) ,
+        have new_x_in_A : new_x ∈ A := begin
+            rw A_eq , simp ,
+        end ,
+
+        have ih := a_ih A' { z : γ | ∃ x y, x ∈ A' ∧ y ∈ B ∧ f x y = z }
+            (
+                λ x:α , λ y:β , λ x_in_A' , λ y_in_B , (begin
+                    simp , existsi x , split , assumption ,
+                    existsi y , split , assumption , trivial ,
+                end)
+            ) (λ z:γ , begin
+                simp , intros , rename x_1 y ,
+                existsi x , split , assumption ,
+                existsi y , split , assumption , assumption ,
+            end) (
+                λ (x : α) (y : β) (x' : α) (y' : β) ,
+                λ x_in_A' , λ x'_in_A' , λ y_in_B , λ y'_in_B' , λ f_eq ,
+                    a_2 x y x' y' (A'_to_A x x_in_A') (A'_to_A x' x'_in_A') y_in_B y'_in_B' f_eq
+            ) (begin
+                by assumption
+            end) (begin
+                by assumption
+            end),
+
+        rw add_comm ,
+        apply (card_split_map C
+             { z : γ | ∃ x y, x ∈ A' ∧ y ∈ B ∧ f x y = z }
+             B
+             (a_n * b) b
+             (λ z : γ , z)
+             (λ y : β , f new_x y)) ,
+        {
+            intros , simp , simp at a_5 ,
+            cases a_5 , cases a_5_h , cases a_5_h_right ,
+            cases a_5_h_right_h ,
+            rw <- a_5_h_right_h_right ,
+            apply (a a_5_w a_5_h_right_w) ,
+            apply A'_to_A, assumption,
+            assumption,
+        },
+        {
+            intros , simp ,
+            apply (a new_x z) ,
+            rw A_eq , simp , assumption ,
+        },
+        {
+            intros ,
+            rename x z ,
+            have q := a_1 z a_5 ,
+            cases q ,
+            cases q_h ,
+            rename q_w x , rename q_h_w y ,
+            cases q_h_h , rw A_eq at q_h_h_left , simp at q_h_h_left ,
+            cases q_h_h_right ,
+            cases q_h_h_left ,
+            {
+                left , existsi z , simp , existsi x , split , assumption ,
+                existsi y , split , assumption, assumption ,
+            },
+            {
+                right , existsi y , split , assumption , simp ,
+                rw <- q_h_h_left , assumption ,
+            },
+        },
+        {
+            intros , simp at a_7 , assumption ,
+        },
+        {
+            intros , simp at a_7 ,
+            exact (a_2 new_x y new_x z new_x_in_A new_x_in_A a_5 a_6 a_7).right,
+        },
+        {
+            intros , simp at a_7 , simp at a_5 , cases a_5 ,
+            rename a_5_w x , cases a_5_h , cases a_5_h_right ,
+            rename a_5_h_right_w z' , cases a_5_h_right_h ,
+            rw a_7 at * , 
+            have x_eq_new_x : (x = new_x) := (a_2 x z' new_x z (A'_to_A x a_5_h_left) new_x_in_A a_5_h_right_h_left a_6 a_5_h_right_h_right).left ,
+            rw x_eq_new_x at * , contradiction ,
+        },
+        {
+            assumption ,
+        },
+        {
+            assumption ,
+        },
+    }
+end 
 
 theorem card_product_nat
     {α : Type} {γ : Type}

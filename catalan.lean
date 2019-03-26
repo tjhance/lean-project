@@ -574,6 +574,14 @@ begin
                      list.length (split_parens l).1 = 2*i}
         a b ,
     {
+        intros , simp , simp at a_3 , cases a_3 , cases a_3_right ,
+        split, assumption , split, assumption , linarith , 
+    },
+    {
+        intros , simp , simp at a_3 , cases a_3 , cases a_3_right ,
+        split, assumption , split, assumption , linarith , 
+    },
+    {
         simp ,
         intros ,
         by_cases (list.length (split_parens x).1 = 2*i) ,
