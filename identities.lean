@@ -65,7 +65,10 @@ theorem card_bijection
         have iffL: (∀ x : α , x ∈ A ↔ x ∈ L), from and.left (and.right hL),
         have lengthHyp: list.length L = a, from and.left hL,
         let fL: list β := list.map f L,
-        have B1: list.length fL = a, from sorry,
+        have B1: list.length fL = a, from 
+            begin
+                simp[list.length_map f L, lengthHyp]
+            end,
         have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from 
             begin
                 intros, 
