@@ -41,6 +41,9 @@ def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
 
+#check choose 5 3
+/- @[simp] theorem mem_map {f : α → β} {b : β} {l : list α} : b ∈ map f l ↔ ∃ a, a ∈ l ∧ f a = b :=
+⟨exists_of_mem_map, λ ⟨a, la, h⟩, by rw [← h]; exact mem_map_of_mem f la⟩-/
 theorem card_bijection
     {α : Type} {β : Type}
         (A : set α) (B : set β) (a : ℕ)
@@ -66,7 +69,13 @@ theorem card_bijection
         have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from 
             begin
                 intros, 
-                have h1: x ∈ B → x ∈ fL, from sorry,  
+                have h1: x ∈ B → x ∈ fL, 
+                    begin
+                        intro h,
+                        have h2: ∃ y, y ∈ A ∧ f y = x, from A2 x h,
+                        have h3: x ∈ list.map f L, from sorry,
+                        simp[h3]
+                    end ,  
                 have h2: x ∈ fL → x ∈ B, from sorry,
                 exact iff.intro h1 h2
             end,
@@ -82,6 +91,7 @@ theorem card_bijection
         exact ⟨fL, and.intro B1 (and.intro B2 B3)⟩,
     }
     end
+    -- from (iff.elim_right list.mem_map) h2
 
 theorem card_split
     {α : Type} (A : set α) (B : set α) (C : set α) (b : ℕ) (c : ℕ) :
