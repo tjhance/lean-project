@@ -539,7 +539,7 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     apply exists.elim h2,
     assume a2 l2,
     have l2iff: ∀ x: α, x ∈ A ↔ x ∈ a2, from and.left (and.right l2),
-    have l1len: list.length a2 = b, from and.left l2,
+    have l2len: list.length a2 = b, from and.left l2,
     have l2nodup: list.nodup a2, from and.right (and.right l2),
     have h1: ∀ x: α, x ∈ a1 ↔ x ∈ a2,
         begin
@@ -559,7 +559,10 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
             exact iff.intro h2 h3
         end,
     have permh: a1 ~ a2, from (iff.elim_right (list.perm_ext l1nodup l2nodup)) h1,
-    sorry
+    have lenh: list.length a1 = list.length a2, from list.perm_length permh,
+    rw l1len at lenh,
+    rw l2len at lenh,
+    exact lenh
     end
     /- {λ x: α, iff.intro (assume x ∈ a1, sorry) (assume x ∈ a2, sorry)} -/
     /- def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
