@@ -7,6 +7,7 @@ import data.list
 import data.finset algebra.big_operators
 import algebra.big_operators
 import init.algebra.functions
+import algebra.group_power
 #eval choose 5 4
 #check nat.rec_on
 
@@ -47,9 +48,44 @@ simp[*, refl]},
 }
 end
 
-/- sum_for_hockey_stick takes m, n, r, and k and computes the sum from k = 0 to i of
-(m choose k)*(n choose r - k), which is what we'll use in Vandermonde's identity 
-with i = r -/
+variables x y: ℕ
+
+/- Here I prove the first steps in the algebraic proof of Vandermonde's as found
+on Wikipedia: https://en.wikipedia.org/wiki/Vandermonde%27s_identity -/
+/- Lemma for a case of using the binomial theorem -/
+lemma binomial_theorem_with_1 (x n : ℕ) : 
+    ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
+    begin
+    intro n,
+    have h3 := add_pow x 1 n,
+    simp at h3, apply h3
+    end 
+
+ /-show sum from r = 0 to m + n (m + n choose r) x^r = (1 + x)^(m + n) = (
+     1 + x)^m = (1 + x)^n = (scary) * (scary) -/
+#check pow_add
+lemma binomial_theorem_for_vandermonde (x m n : ℕ) :
+    ∀ n m: ℕ, (finset.range (m + nat.succ n)).sum(λ r, x^r * (choose (m + n) r)) 
+        = (finset.range (nat.succ m)).sum(λ r, x^r * 
+        choose m r)*(finset.range (nat.succ n)).sum(λ r, x^r * choose n r) :=
+    begin
+        intros n m,
+        have h := pow_add (x + 1) m n,
+        have h1 : n + m = m + n, by simp[add_comm],
+        simp at h,
+        rw h1 at h,
+        calc 
+        (finset.range (m + nat.succ n)).sum(λ r, x^r * (choose (m + n) r)) = 
+                (x + 1)^(m + n): by rw ← binomial_theorem_with_1 x (m + nat.succ n)
+        ... = (x + 1)^m * (x + 1)^n: h
+        ... = (finset.range (nat.succ m)).sum(λ r, x^r * choose m r) * (x + 1)^n: by rw binomial_theorem_with_1 x (nat.succ m)
+        ... = (finset.range (nat.succ m)).sum(λ r, x^r * 
+        choose m r)*(finset.range (nat.succ n)).sum(λ r, x^r * choose n r) : by rw binomial_theorem_with_1 x (nat.succ n)
+    end
+
+/- Vandermonde's identity says that m + n choose r equals the 
+sum from k = 0 to r of (m choose k)*(n choose r - k)
+-/
 def sum_for_vandermonde (m n r i: ℕ) : ℕ :=
 nat.rec_on i ((choose m 0)*(choose n r)) 
 (λ i ih, ih + (choose m (i + 1))*(choose n (r - (i + 1))))
@@ -64,19 +100,11 @@ nat.rec_on i ((choose m 0)*(choose n r))
 #eval sum_for_vandermonde 12 5 8 3
 #eval sum_for_vandermonde  3 4 6 5
 
-/- Vandermonde's identity says that m + n choose r equals the 
-sum from k = 0 to r of (m choose k)*(n choose r - k)
--/
-variables x y: ℕ
-
-theorem binomial_theorem_with_1 (x y n : ℕ) : 
-    ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
-    begin
-    intro n,
-    have h3 := add_pow x 1 n,
-    simp at h3, apply h3
-    end 
-
+/- The algebraic proof of Vandermonde's finishes with a difficult result regarding the the multiplication of two
+polynomials, so I tried to instead prove Vandermonde's inductively, as at
+ https://math.stackexchange.com/questions/219928/inductive-proof-for-vandermondes-identity/219938  
+ This too was difficult because the induction is not just on a single variable but rather on both
+ n and r, and due to time constraints I did not finish. -/
 lemma sum_for_vandermonde_with_n_is_zero (m r: ℕ) : sum_for_vandermonde m 0 r r = choose m r := 
 begin
 induction r with r ih,
