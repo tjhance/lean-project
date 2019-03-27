@@ -83,7 +83,23 @@ theorem card_bijection
                         have h4: x ∈ list.map f L, from (iff.elim_right list.mem_map) h3,
                         simp[h3]
                     end ,  
-                have h2: x ∈ fL → x ∈ B, from sorry,
+                have h2: x ∈ fL → x ∈ B, 
+                    begin   
+                        intro h,
+                        have h1: ∃ y, y ∈ L ∧ f y = x, from list.exists_of_mem_map h,
+                        have h2: ∃ y, y ∈ A ∧ f y = x,
+                            begin   
+                                apply exists.elim h1,
+                                assume y, assume hy,
+                                have hy1: y ∈ A, from iff.elim_right (iffL y) (and.left hy),
+                                exact exists.intro y (and.intro hy1 (and.right hy))
+                            end,
+                        apply exists.elim h2,
+                        assume y, assume hy,
+                        have h3: f y ∈ B, from A1 y (and.left hy),
+                        have h4: f y = x, from and.right hy,
+                        simp[h3] at h4,
+                    end,
                 exact iff.intro h1 h2
             end,
         have h: ∀ x ∈ A, ∀ y ∈ A, f x = f y → x = y, begin intros, exact A3 x y H H_1 a_1 end,  
