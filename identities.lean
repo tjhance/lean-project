@@ -10,7 +10,7 @@ import data.list.perm
    Katherine Cordwell (kcordwell)
 -/
 
-/- Our plan is to prove various combinatorial identities.
+/- We prove various combinatorial identities.
 In particular,
 
  - Vandermonde's identity (Katherine's focus)
