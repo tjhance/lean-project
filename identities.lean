@@ -4,20 +4,13 @@ import data.set.finite
 import data.multiset
 import data.list
 
---import classical
-
-#check set
-#check finset ℕ 
-#check @finset.mk
-#check choose 5 4
-
 /- Collaboration between
    Travis Hance (thance)
    Katherine Cordwell (kcordwell)
 -/
 
 /- Our plan is to prove various combinatorial identities.
-In paritcular,
+In particular,
 
  - Vandermonde's identity (Katherine's focus)
  - the Hockeystick identity (Katherine's focus)
@@ -25,6 +18,17 @@ In paritcular,
     by the usual recurrence, equals (1/(n+1))*(2n+1 choose n). (Travis's focus)
 
 For some or all of these, we will use combinatorial bijections.
+
+ORGANIZATION:
+    - identities.lean (this file):
+        - Theorems about set bijections
+        - Proof that the set of lists of length n with k
+          distinguished items has size (n choose k).
+    - hockeystick.lean:
+        - Proof of hockeystick identity and Vandermonde's identity
+    - catalan.lean
+        - Definition of catalan numbers by recurrence
+        - Proof that catalan numbers are (2n+1 choose n) / (2n+1)
 -/
 
 /-
