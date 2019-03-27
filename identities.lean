@@ -533,14 +533,19 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     simp[has_card] at h2,
     apply exists.elim h1,
     assume a1 l1,
+    have l1iff: ∀ x: α, x ∈ A ↔ x ∈ a1, from and.left (and.right l1),
+    have l1len: list.length a1 = a, from and.left l1,
     apply exists.elim h2,
     assume a2 l2,
+    have l2iff: ∀ x: α, x ∈ A ↔ x ∈ a2, from and.left (and.right l2),
+    have l1len: list.length a2 = b, from and.left l2,
     have h1: ∀ x: α, x ∈ a1 ↔ x ∈ a2,
         begin
             intro x,
             have h2: x ∈ a1 → x ∈ a2,
                 begin  
                     intro hnew,
+                    have hA: x ∈ A, from sorry,
                     sorry
                 end,
             have h3: x ∈ a2 → x ∈ a1,
