@@ -3,6 +3,7 @@ import data.set
 import data.set.finite
 import data.multiset
 import data.list
+import data.list.perm
 
 --import classical
 
@@ -524,7 +525,6 @@ begin
     },
 end
 
-
 theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     has_card A a → has_card A b → a = b := begin
     intro h1,
@@ -535,10 +535,12 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     assume a1 l1,
     have l1iff: ∀ x: α, x ∈ A ↔ x ∈ a1, from and.left (and.right l1),
     have l1len: list.length a1 = a, from and.left l1,
+    have l1nodup: list.nodup a1, from and.right (and.right l1),
     apply exists.elim h2,
     assume a2 l2,
     have l2iff: ∀ x: α, x ∈ A ↔ x ∈ a2, from and.left (and.right l2),
     have l1len: list.length a2 = b, from and.left l2,
+    have l2nodup: list.nodup a2, from and.right (and.right l2),
     have h1: ∀ x: α, x ∈ a1 ↔ x ∈ a2,
         begin
             intro x,
@@ -556,6 +558,7 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
                 end,
             exact iff.intro h2 h3
         end,
+    have permh: a1 ~ a2, from (iff.elim_right (list.perm_ext l1nodup l2nodup)) h1,
     sorry
     end
     /- {λ x: α, iff.intro (assume x ∈ a1, sorry) (assume x ∈ a2, sorry)} -/
