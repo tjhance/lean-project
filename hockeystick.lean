@@ -52,11 +52,56 @@ simp[*, refl]},
 }
 end
 
-variables x y: ℕ
+/- Here is my first attempt at stating Vandermonde's identity.
+ Vandermonde's identity says that m + n choose r equals the 
+sum from k = 0 to r of (m choose k)*(n choose r - k).  I tried to do
+an inductive proof as at https://math.stackexchange.com/questions/219928/inductive-proof-for-vandermondes-identity/219938,
+but this was not so good because the induction was on both n and r, and it got fairly messy.
+So I decided to try a different approach (see below).
+-/
+def sum_for_vandermonde (m n r i: ℕ) : ℕ :=
+nat.rec_on i ((choose m 0)*(choose n r)) 
+(λ i ih, ih + (choose m (i + 1))*(choose n (r - (i + 1))))
 
-/- Here I prove the first steps in the algebraic proof of Vandermonde's as found
-on Wikipedia: https://en.wikipedia.org/wiki/Vandermonde%27s_identity -/
+#eval sum_for_vandermonde  3 4 6 6
+#eval choose (3 + 4) 6
+
+#eval sum_for_vandermonde 12 5 8 8
+#eval choose (12 + 5) 8
+
+/- double-checked with Mathematica -/
+#eval sum_for_vandermonde 12 5 8 3
+#eval sum_for_vandermonde  3 4 6 5
+
+lemma sum_for_vandermonde_with_n_is_zero (m r: ℕ) : sum_for_vandermonde m 0 r r = choose m r := 
+begin
+induction r with r ih,
+{
+   calc 
+    sum_for_vandermonde m 0 0 0 = (choose m 0)*(choose 0 0) : by refl
+    ... = choose m 0 : by simp
+    },
+calc 
+    sum_for_vandermonde m 0 (nat.succ r) (nat.succ r) = sorry : sorry
+    ... = choose m (nat.succ r): sorry
+end
+
+theorem vandermonde_identity (m n : ℕ) :
+∀ r : ℕ, sum_for_vandermonde m n r r = choose (m + n) r := 
+begin
+induction n with n ih1,
+{simp[choose, sum_for_vandermonde_with_n_is_zero]},
+intro r, simp[sum_for_vandermonde, choose], sorry
+end
+
+
+/- Next I decided to restate Vandermonde's theorem using big_ops and started on
+the algebraic proof of Vandermonde's as found on Wikipedia: 
+https://en.wikipedia.org/wiki/Vandermonde%27s_identity.  I proved the first few
+steps but ended up spending time on some other parts of the project and didn't finish. -/
+
 /- Lemma for a case of using the binomial theorem -/
+variables x y : ℕ 
 lemma binomial_theorem_with_1 (x n : ℕ) : 
     ∀ n : ℕ, (x + 1)^n = (finset.range (nat.succ n)).sum (λ m, x ^ m * choose n m) :=
     begin
@@ -87,52 +132,9 @@ lemma binomial_theorem_for_vandermonde (x m n : ℕ) :
         choose m r)*(finset.range (nat.succ n)).sum(λ r, x^r * choose n r) : by rw binomial_theorem_with_1 x (nat.succ n)
     end
 
-/- Vandermonde's identity says that m + n choose r equals the 
-sum from k = 0 to r of (m choose k)*(n choose r - k)
--/
-def sum_for_vandermonde (m n r i: ℕ) : ℕ :=
-nat.rec_on i ((choose m 0)*(choose n r)) 
-(λ i ih, ih + (choose m (i + 1))*(choose n (r - (i + 1))))
-
-#eval sum_for_vandermonde  3 4 6 6
-#eval choose (3 + 4) 6
-
-#eval sum_for_vandermonde 12 5 8 8
-#eval choose (12 + 5) 8
-
-/- double-checked with Mathematica -/
-#eval sum_for_vandermonde 12 5 8 3
-#eval sum_for_vandermonde  3 4 6 5
-
-/- The algebraic proof of Vandermonde's finishes with a difficult result regarding the the multiplication of two
-polynomials, so I tried to instead prove Vandermonde's inductively, as at
- https://math.stackexchange.com/questions/219928/inductive-proof-for-vandermondes-identity/219938  
- This too was difficult because the induction is not just on a single variable but rather on both
- n and r, and due to time constraints I did not finish. -/
-lemma sum_for_vandermonde_with_n_is_zero (m r: ℕ) : sum_for_vandermonde m 0 r r = choose m r := 
+/- Vandermonde's identity (restated) -/
+theorem vandermonde_thm (m n r : ℕ) :
+∀ r : ℕ, (finset.range (nat.succ r)).sum(λ k, (choose m k)*(choose n (r-k)))= choose (m + n) r := 
 begin
-induction r with r ih,
-{
-   calc 
-    sum_for_vandermonde m 0 0 0 = (choose m 0)*(choose 0 0) : by refl
-    ... = choose m 0 : by simp
-    },
-calc 
-    sum_for_vandermonde m 0 (nat.succ r) (nat.succ r) = sorry : sorry
-    ... = choose m (nat.succ r): sorry
+sorry
 end
-
-theorem vandermonde_identity (m n : ℕ) :
-∀ r : ℕ, sum_for_vandermonde m n r r = choose (m + n) r := 
-begin
-induction n with n ih1,
-{simp[choose, sum_for_vandermonde_with_n_is_zero]},
-intro r, simp[sum_for_vandermonde, choose], sorry
-end
-
-/-
-def choose : ℕ → ℕ → ℕ
-| _             0 := 1
-| 0       (k + 1) := 0
-| (n + 1) (k + 1) := choose n k + choose n (succ k)
--/
