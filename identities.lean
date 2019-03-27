@@ -5,7 +5,7 @@ import data.multiset
 import data.list
 import data.list.perm
 
---import classical
+import classical
 
 #check set
 #check finset ℕ 
@@ -564,11 +564,6 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     rw l2len at lenh,
     exact lenh
     end
-    /- {λ x: α, iff.intro (assume x ∈ a1, sorry) (assume x ∈ a2, sorry)} -/
-    /- def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
-    ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
-            ∧ list.nodup l -/
-
 
 /-
     Here we define the set of boolean sequences of length n with
