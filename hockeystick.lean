@@ -11,6 +11,10 @@ import algebra.group_power
 #eval choose 5 4
 #check nat.rec_on
 
+/- Collaboration between
+   Travis Hance (thance)
+   Katherine Cordwell (kcordwell)
+-/
 
 /- Following the proof at https://artofproblemsolving.com/wiki/index.php/Combinatorial_identity -/
 

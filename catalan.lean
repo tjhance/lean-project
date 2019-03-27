@@ -7,6 +7,11 @@ import data.int.basic
 import tactic.ring
 import data.nat.gcd
 
+/- Collaboration between
+   Travis Hance (thance)
+   Katherine Cordwell (kcordwell)
+-/
+
 /-
     Catalan numbers.
 

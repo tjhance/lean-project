@@ -10,7 +10,7 @@ import data.list.perm
    Katherine Cordwell (kcordwell)
 -/
 
-/- Our plan is to prove various combinatorial identities.
+/- We prove various combinatorial identities.
 In particular,
 
  - Vandermonde's identity (Katherine's focus)
@@ -632,39 +632,22 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
     has_card (set_n_choose_k n k) (choose n k)
 | n 0 :=
     begin
-        rw [has_card, set_n_choose_k] ,
-        existsi ([all_ff n]) ,
-        split ,
-        simp ,
-        intros ,
-        split ,
-        intros ,
-        cases a ,
-        simp ,
-        subst n ,
+        simp , rw [set_n_choose_k] ,
+        apply (card_1
+            {l : list bool | list.length l = n ∧ count_tt l = 0} 
+            (all_ff n)) ,
+        simp , split , apply length_all_ff , apply count_tt_all_ff ,
+        intros , simp at a , cases a , subst n , symmetry ,
         apply is_all_ff , assumption ,
-        intros ,
-        simp at a ,
-        simp ,
-        subst x ,
-        split ,
-        apply length_all_ff ,
-        apply count_tt_all_ff ,
     end
 | 0 (k + 1) :=
     begin
-        simp [has_card, set_n_choose_k] ,
-        existsi ([]) ,
-        split ,
-        refl ,
-        intros , split ,
-        intros ,
-        simp ,
-        cases a ,
-        have h : (x = list.nil) ,
-        cases x , trivial, trivial ,
-        subst x at a_right , simp [count_tt] at a_right , trivial ,
-        simp ,
+        simp [set_n_choose_k] ,
+        apply (card_0
+            {l : list bool | list.length l = 0 ∧ count_tt l = k + 1}) ,
+        intros , simp at a , cases a ,
+        cases y , rw [count_tt] at a_right , contradiction ,
+        simp at a_left , contradiction ,
     end
 | (n+1) (k+1) :=
     begin
@@ -678,6 +661,16 @@ theorem has_card_set_n_choose_k : ∀ (n : ℕ) (k : ℕ) ,
             (λ r : (list bool) , ((tt :: r) : list bool))
             (λ r : (list bool) , ((ff :: r) : list bool))
         ) ,
+        {
+            intros , simp , simp at a , cases a , split ,
+            rw a_left, rw add_comm ,
+            simp [count_tt] , assumption ,
+        },
+        {
+            intros , simp , simp at a , cases a , split ,
+            rw a_left , rw add_comm ,
+            simp [count_tt] , assumption ,
+        },
         {
             simp , intros ,
             cases x , trivial ,
