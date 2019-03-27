@@ -545,13 +545,14 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
             have h2: x ∈ a1 → x ∈ a2,
                 begin  
                     intro hnew,
-                    have hA: x ∈ A, from sorry,
-                    sorry
+                    have hA: x ∈ A, from iff.elim_right (l1iff x) hnew,
+                    exact iff.elim_left (l2iff x) hA
                 end,
             have h3: x ∈ a2 → x ∈ a1,
                 begin  
                     intro hnew,
-                    sorry
+                    have hA: x ∈ A, from iff.elim_right (l2iff x) hnew,
+                    exact iff.elim_left (l1iff x) hA
                 end,
             exact iff.intro h2 h3
         end,
