@@ -63,7 +63,13 @@ theorem card_bijection
         have lengthHyp: list.length L = a, from and.left hL,
         let fL: list β := list.map f L,
         have B1: list.length fL = a, from sorry,
-        have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from sorry,
+        have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from 
+            begin
+                intros, 
+                have h1: x ∈ B → x ∈ fL, from sorry,  
+                have h2: x ∈ fL → x ∈ B, from sorry,
+                exact iff.intro h1 h2
+            end,
         have h: ∀ x ∈ A, ∀ y ∈ A, f x = f y → x = y, begin intros, exact A3 x y H H_1 a_1 end,  
         have h1: ∀ x ∈ L, ∀ y ∈ L, f x = f y → x = y, 
             begin 
