@@ -41,10 +41,6 @@ def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
 
-/-theorem nodup_map_on {f : α → β} {l : list α} (H : ∀x∈l, ∀y∈l, f x = f y → x = y)
-  (d : nodup l) : nodup (map f l) :=
-pairwise_map_of_pairwise _ (by exact λ a b ⟨ma, mb, n⟩ e, n (H a ma b mb e)) (pairwise.and_mem.1 d)
--/
 theorem card_bijection
     {α : Type} {β : Type}
         (A : set α) (B : set β) (a : ℕ)
@@ -63,11 +59,18 @@ theorem card_bijection
         assume L, assume hL: list.length L = a ∧ (∀ x : α , x ∈ A ↔ x ∈ L)
             ∧ list.nodup L,
         have nodupL: list.nodup L, from and.right (and.right hL),
+        have iffL: (∀ x : α , x ∈ A ↔ x ∈ L), from and.left (and.right hL),
+        have lengthHyp: list.length L = a, from and.left hL,
         let fL: list β := list.map f L,
         have B1: list.length fL = a, from sorry,
         have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from sorry,
         have h: ∀ x ∈ A, ∀ y ∈ A, f x = f y → x = y, begin intros, exact A3 x y H H_1 a_1 end,  
-        have h1: ∀ x ∈ L, ∀ y ∈ L, f x = f y → x = y, from sorry,  
+        have h1: ∀ x ∈ L, ∀ y ∈ L, f x = f y → x = y, 
+            begin 
+                intros, have h1: x ∈ A, from iff.elim_right(iffL x) H, 
+                have h2: y ∈ A, from iff.elim_right(iffL y) H_1,
+                exact A3 x y h1 h2 a_1
+            end,  
         have h2: list.nodup (list.map f L), from list.nodup_map_on h1 nodupL,
         have B3: list.nodup fL, from h2,
         exact ⟨fL, and.intro B1 (and.intro B2 B3)⟩,
