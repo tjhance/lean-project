@@ -98,7 +98,8 @@ theorem card_bijection
                         assume y, assume hy,
                         have h3: f y ∈ B, from A1 y (and.left hy),
                         have h4: f y = x, from and.right hy,
-                        simp[h3] at h4,
+                        rw h4 at h3,
+                        exact h3
                     end,
                 exact iff.intro h1 h2
             end,
