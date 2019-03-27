@@ -4,7 +4,7 @@ import data.set.finite
 import data.multiset
 import data.list
 
-import classical
+--import classical
 
 #check set
 #check finset ℕ 
@@ -41,6 +41,10 @@ def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
 
+/-theorem nodup_map_on {f : α → β} {l : list α} (H : ∀x∈l, ∀y∈l, f x = f y → x = y)
+  (d : nodup l) : nodup (map f l) :=
+pairwise_map_of_pairwise _ (by exact λ a b ⟨ma, mb, n⟩ e, n (H a ma b mb e)) (pairwise.and_mem.1 d)
+-/
 theorem card_bijection
     {α : Type} {β : Type}
         (A : set α) (B : set β) (a : ℕ)
@@ -58,10 +62,14 @@ theorem card_bijection
     {
         assume L, assume hL: list.length L = a ∧ (∀ x : α , x ∈ A ↔ x ∈ L)
             ∧ list.nodup L,
+        have nodupL: list.nodup L, from and.right (and.right hL),
         let fL: list β := list.map f L,
         have B1: list.length fL = a, from sorry,
         have B2: (∀ x : β , x ∈ B ↔ x ∈ fL), from sorry,
-        have B3: list.nodup fL, from sorry,
+        have h: ∀ x ∈ A, ∀ y ∈ A, f x = f y → x = y, begin intros, exact A3 x y H H_1 a_1 end,  
+        have h1: ∀ x ∈ L, ∀ y ∈ L, f x = f y → x = y, from sorry,  
+        have h2: list.nodup (list.map f L), from list.nodup_map_on h1 nodupL,
+        have B3: list.nodup fL, from h2,
         exact ⟨fL, and.intro B1 (and.intro B2 B3)⟩,
     }
     end
@@ -473,6 +481,7 @@ begin
         apply has_card_nats_lt ,
     },
 end
+
 
 theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     has_card A a → has_card A b → a = b := begin
