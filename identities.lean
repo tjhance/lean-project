@@ -40,7 +40,7 @@ For some or all of these, we will use combinatorial bijections.
 def has_card {α : Type} (s : set α) (n : ℕ) : Prop :=
     ∃ l : (list α) , list.length l = n ∧ (∀ x : α , x ∈ s ↔ x ∈ l)
             ∧ list.nodup l
-            
+
 theorem card_bijection
     {α : Type} {β : Type}
         (A : set α) (B : set β) (a : ℕ)
@@ -536,7 +536,20 @@ theorem cardinality_unique {α : Type} (A : set α) (a:ℕ) (b:ℕ) :
     apply exists.elim h2,
     assume a2 l2,
     have h1: ∀ x: α, x ∈ a1 ↔ x ∈ a2,
-        from sorry,
+        begin
+            intro x,
+            have h2: x ∈ a1 → x ∈ a2,
+                begin  
+                    intro hnew,
+                    sorry
+                end,
+            have h3: x ∈ a2 → x ∈ a1,
+                begin  
+                    intro hnew,
+                    sorry
+                end,
+            exact iff.intro h2 h3
+        end,
     sorry
     end
     /- {λ x: α, iff.intro (assume x ∈ a1, sorry) (assume x ∈ a2, sorry)} -/
