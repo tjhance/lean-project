@@ -10,9 +10,36 @@ import data.nat.gcd
 /-
     Catalan numbers.
 
-    First we define
-    `balanced`: balanced strength of parentheses (`tt` is an 
-    open paren, `ff` is a close paren).
+    In this file we:
+
+        - Define `balanced`: balanced strings of parentheses
+          (`tt` is   and open paren, `ff` is a close paren).
+
+        - Define `catalan`: the catalan numbers by recurrence
+
+        - Show that the set of balanced strings of length 2*n
+          is catalan n. (theorem `has_card_set_balanced`)
+          by induction, by showing that a balanced string of
+          length 2*(m+1) corresponds to a pair of balanced
+          strings whose lengths sum to 2*m.
+
+        - Define `below_diagonal_path`, a proposition which
+          indicates that a path of length (2n+1) goes from
+          (0,0) to (n,n+1) while never going above the
+          (0,0)--(n,n+1) diagonal.
+        
+        - Show that balanced strings of length 2*n are in bijection
+          with below_diagonal_path strings of length 2*n+1.
+          (theorem `has_card_set_below_diagonal_path_catalan`)
+        
+        - Take all 2*n+1 rotations of all below_diagonal_path
+          strings, and show that this gives *all* paths
+          from (0,0) to (n,n+1)
+          (theorem `theorem has_card_set_n_choose_k_catalan`)
+        
+        - Finally, show that
+            catalan n = (choose (2*n+1) n) / (2*n + 1)
+          (theorem `catalan_identity`)
 
     We define `catalan` by recurence, then show that `catalan n`
     is the cardinality of the set of balanced strings of length 2n.
@@ -21,6 +48,11 @@ import data.nat.gcd
     Then by doing a bijection through paths from (0,0) to (n,n+1),
     we prove our main result, the theorem
     `catalan_identity`.
+-/
+
+/-
+    Define balanced strings of parentheses.
+    `tt` represents an open paren, `ff` represents a closed paren.
 -/
 
 def balanced_aux : (list bool) → (ℕ) → Prop
@@ -32,8 +64,17 @@ def balanced_aux : (list bool) → (ℕ) → Prop
 
 def balanced (l : list bool) : Prop := balanced_aux l 0
 
+/-
+    Define the set of balanced parentheses of length 2*n
+    (that is, n pairs of parentheses)
+-/
+
 def set_balanced (n : ℕ) : set (list bool) :=
     { l : list bool | list.length l = 2 * n ∧ balanced l }
+
+/-
+    Define the catalan numbers
+-/
 
 def sum_to : Π (n:ℕ) , (Π (x:ℕ) , (x<n) → ℕ) → ℕ
     | 0 f := 0
@@ -66,6 +107,8 @@ def split_parens : (list bool) → (list bool × list bool)
 /- combined A, B into (A)B -/
 def combine_parens (l : list bool) (m : list bool) : (list bool) :=
     tt :: l ++ ff :: m
+
+/- lemmas about balanced parentheses -/
 
 theorem balanced_split_parens_2_aux : ∀ (l:list bool) (d:ℕ) ,
     balanced_aux l d -> balanced (split_parens_aux l d).2
@@ -496,6 +539,8 @@ begin
     }
 end 
 
+/- annoying arithmetic lemmas -/
+
 theorem nat_lt_of_not_eq : ∀ (n:ℕ) (m:ℕ) ,
     n < m+1 → ¬(n = m) → n < m :=
 begin
@@ -620,6 +665,12 @@ begin
     apply card_0 ,
     simp ,
 end
+
+/-
+    Show that balanced parentheses have cardinality the catalan
+    numbers by splitting the parentheses strings into pairs.
+    We do induction on `bound`.
+-/
 
 lemma has_card_set_balanced_aux : ∀ bound n ,
     n < bound →
@@ -770,6 +821,9 @@ lemma has_card_set_balanced_aux : ∀ bound n ,
 
     end
 
+/- main theorem that balanced parentheses strings of length 2*n
+   has cardinality catalan n -/
+
 theorem has_card_set_balanced : ∀ n ,
     has_card (set_balanced n) (catalan n) :=
 begin
@@ -804,11 +858,28 @@ def argmax : (ℕ → ℤ) → ℕ → ℕ
     | f 0 := 0
     | f (n+1) := if f (n+1) > f (argmax f n) then (n+1) else argmax f n
 
+/-
+    Gets the point on a path from (0,0) to (n,n+1)
+    which is farthest above the (0,0)--(n,n+1) diagonal.
+    This is important because if we rotate the path to this
+    point, then it will be a below_diagonal_path.
+    (theorem below_diagonal_path_rotate_best_point).
+-/
+
 def best_point (n:ℕ) (l : list bool) :=
     argmax (λ i ,
         (int.of_nat n) * (int.of_nat i) -
             (2*(int.of_nat n) + 1) * (int.of_nat (count_tt (list.take i l)))
     ) (2*n)
+
+/-
+    A bunch of lemmas dealing with rotations and argmax and
+    miscellaneous. We represent rotations as numbers i
+    where 0 ≤ i < n. And implement them as
+    `list.drop i l + list.take i l`.
+    (In retrospect it might have made more sense to use list.rotate
+    more heavily.) 
+-/
 
 def negate_rotation (n:ℕ) (i:ℕ) :=
     if i = 0 then 0 else n - i
@@ -1178,6 +1249,11 @@ begin
     intros , rw h , simp ,
 end
 
+/-
+    This shows that given any path, we can rotate it to be a
+    below_diagonal_path.
+-/
+
 theorem below_diagonal_path_rotate_best_point : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2*n + 1 →
     count_tt l = n →
@@ -1347,6 +1423,11 @@ theorem a_plus_a_plus_1_ge : ∀ (a:ℕ) (b:ℕ) ,
         intros, linarith ,
     end
 
+/-
+    Given a below_diagonal_path, it must end in an `ff`
+    (an edge going up) and the rest of it must be balanced.
+-/
+
 theorem below_diagonal_path_ends_in_ff_aux :
     ∀ (n : ℕ) (l : list bool) (d : ℕ) (j_tt : ℕ) (j_ff : ℕ) ,
     j_tt + j_ff + list.length l = 2*n + 1 →
@@ -1486,7 +1567,7 @@ theorem below_diagonal_path_ends_in_ff_aux :
 | n (tt :: (x::l)) d j_tt j_ff :=
     begin
         intros ,
-            have b1 : (j_tt + 1 + j_ff + list.length (x :: l) = 2 * n + 1) := begin
+        have b1 : (j_tt + 1 + j_ff + list.length (x :: l) = 2 * n + 1) := begin
                 simp , simp at a , assumption ,
             end ,
         have b2 : (j_tt + 1 + count_tt (x :: l) = n) :=
@@ -1753,6 +1834,10 @@ begin
     linarith ,
 end
 
+/- Given a balanced string, we can append one `ff` (up-edge or
+   parenthesis, depending on interpretation) and get a
+   below_diagonal_path. -/
+
 theorem below_diagonal_path_of_balanced : ∀ (n : ℕ) (l : list bool) ,
     list.length l = 2 * n →
     balanced l →
@@ -1844,6 +1929,12 @@ begin
     have h : (nat.succ (nat.succ n)) = n + 2 := rfl , rw h,
     rw nat.mod_eq_of_lt , simp , linarith ,
 end
+
+/-
+    If one below_diagonal_path rotates to another, then the rotation
+    must be 0. This ultimately shows that each orbit of path rotations 
+    contains only one below_diagonal_path.
+-/
 
 theorem below_diagonal_rotation_is_0 : ∀ (n : ℕ) (l : list bool) (i : ℕ) ,
     i < (2*n + 1) →
@@ -2025,6 +2116,12 @@ begin
     },
 end
 
+/-
+    set of `below_diagonal_path n` strings has cardinality
+    `catalan n`. This is done with the correspondence between
+    balanced parentheses strings and below_diagonal_paths.
+-/
+
 theorem has_card_set_below_diagonal_path_catalan : ∀ n ,
     has_card {l : list bool | below_diagonal_path n l} (catalan n) :=
 begin
@@ -2072,6 +2169,11 @@ begin
         apply has_card_set_balanced
     },
 end
+
+/-
+    Shows that all the rotations of all the below_diagonal_path
+    strings are all unique and make up all paths. 
+-/
 
 theorem has_card_set_n_choose_k_catalan : ∀ n ,
     has_card (set_n_choose_k (2*n+1) n) (catalan n * (2*n+1)) :=
