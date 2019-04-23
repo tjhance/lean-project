@@ -73,9 +73,62 @@ lemma primorial_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
     m ≥ 2 →
     primorial (2*m + 1) ≤ primorial (m+1) * 2^(2*m) := sorry
 
+lemma case_by_parity : ∀ (n : ℕ) ,
+    (∃ (m:ℕ) , n = 2*m) ∨ (∃ (m:ℕ) , n = 2*m + 1) := sorry
+
+lemma le_2_pow_2_mul_2_mul_plus_1 : ∀ (m : ℕ) ,
+    2 ^ (2 * (2 * m + 1)) ≤ 2 ^ (2 * (2 * (m + 1))) := sorry
+
 lemma primorial_bound : ∀ (n : ℕ) ,
     n ≥ 3 →
-    8 * primorial n < 2 ^ (2*n) := sorry
+    8 * primorial n < 2 ^ (2*n)
+| 0 := sorry
+| 1 := sorry
+| 2 := sorry
+| 3 := sorry
+| 4 := sorry
+| (n+5) := begin
+    intros ,
+    cases (case_by_parity (n+5)) ,
+    {
+        cases h , rename h_w m , rw h_h at * ,
+        cases m , simp at a , linarith ,
+        have q : (nat.succ m) = (m+1) := rfl , rw q at * , clear q ,
+        have m_ge_1 : m ≥ 1 := sorry ,
+        rw primorial ,
+        rw [<- @range_to_append 1 (2*m + 1) (2*(m+1))] ,
+        {
+        rw list.filter_append ,
+        have r : range_to (2 * m + 1 + 1) (2 * (m + 1)) = [2 * (m+1)] := sorry,
+        rw r ,
+        have s : list.filter nat.prime [2 * (m + 1)] = [] := sorry ,
+        rw s , simp ,
+        have ih_bound : (1 + 2*m < (n+5)) := sorry ,
+        have ih := primorial_bound (2*m + 1) sorry ,
+        rw [<- primorial] ,
+        rw nat.add_comm ,
+        calc 8 * primorial (2 * m + 1) < 2 ^ (2 * (2 * m + 1)) : ih
+        ... ≤ 2 ^ (2 * (2 * (m + 1))) : (le_2_pow_2_mul_2_mul_plus_1 m)
+        },
+        linarith , linarith ,
+    },
+    {
+        cases h , rename h_w m , rw h_h at * ,
+        have m_ge_2 : m ≥ 2 := sorry ,
+        have h1 := primorial_2m_plus_1_le_power_2 m m_ge_2 ,
+        have ih_bound : (m+1 < (n+5)) := sorry ,
+        have h2 := primorial_bound (m+1) sorry ,
+        calc 8 * primorial (2 * m + 1) ≤ 8 * primorial (m + 1) * 2 ^ (2*m) :        begin
+                rw nat.mul_assoc ,
+                apply nat.mul_le_mul_left , assumption ,
+              end
+        ... < 2 ^ (2 * (m+1)) * 2 ^ (2*m) :
+            begin
+                rw mul_lt_mul_right , assumption , exact sorry
+            end
+        ... = 2 ^ (2 * (2*m+1)) : sorry
+    },
+end
 
 /- prime factorization -/
 
