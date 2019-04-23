@@ -35,7 +35,7 @@ lemma central_primes_do_not_divide : ∀ (p n : ℕ) ,
 def range_to (n:ℕ) (m:ℕ) := list.range' n (m-n+1)
 
 theorem range_to_append : ∀ (n m k : ℕ) ,
-    n ≤ m → m ≤ k →
+    n ≤ m+1 → m ≤ k →
     range_to n m ++ range_to (m+1) k = range_to n k := sorry
 
 /- "lemma 4" -/
@@ -43,10 +43,25 @@ theorem range_to_append : ∀ (n m k : ℕ) ,
 def primorial (n : ℕ) : ℕ :=
     (list.filter nat.prime (range_to 1 n)).prod
 
+lemma zero_lt_primorial : ∀ (n : ℕ) ,
+    0 < primorial n := sorry
+
 lemma primorial_ratio_eq_prod : ∀ (n m : ℕ) ,
     m ≤ n →
     primorial n / primorial m =
-        (list.filter nat.prime (range_to (m+1) n)).prod := sorry
+        (list.filter nat.prime (range_to (m+1) n)).prod :=
+begin
+    intros , 
+    have h : primorial n = primorial m * (list.filter nat.prime (range_to (m+1) n)).prod := begin
+        rw [primorial, primorial] ,
+        rw <- list.prod_append,
+        rw <- list.filter_append ,
+        rw <- range_to_append ,
+        linarith, linarith ,
+    end,
+    rw h , rw nat.mul_div_cancel_left ,
+    apply zero_lt_primorial ,
+end
 
 lemma prime_list_dvd : ∀ (n m k : ℕ) ,
     (∀ (p:ℕ) , nat.prime p → m+1 ≤ p → p ≤ n → p ∣ k) → 
@@ -56,11 +71,38 @@ lemma p_dvd_choose_2m_plus_1_of_ge_m_plus_2 : ∀ (m p : ℕ) ,
     nat.prime p →
     m + 2 ≤ p →
     p ≤ 2*m + 1 →
-    p ∣ choose (2*m+1) (m+1) := sorry
+    p ∣ choose (2*m+1) (m+1) :=
+begin
+    intros ,
+    have q := @choose_mul_fact_mul_fact (2*m + 1) (m + 1) (by linarith) ,
+    have r : p ∣ nat.fact (2 * m + 1) := begin
+            rw nat.prime.dvd_fact , assumption , assumption , 
+        end,
+    have r1 : ¬ (p ∣ nat.fact (m + 1)) := begin
+            rw nat.prime.dvd_fact , simp , linarith , assumption ,
+        end,
+    have r2 : ¬ (p ∣ nat.fact (2 * m + 1 - (m + 1))) := begin
+            rw nat.prime.dvd_fact , simp ,
+            have h1 : 1 + 2 * m = (m + (m+1)) := by ring ,
+            rw h1 , rw nat.add_sub_cancel , linarith , 
+            assumption ,
+        end,
+    rw <- q at r ,
+    rw nat.prime.dvd_mul at r ,
+    cases r ,
+    rw nat.prime.dvd_mul at r ,
+    cases r , assumption , contradiction , assumption , contradiction ,
+    assumption ,
+end
 
 lemma primorial_ratio_le_choose : ∀ (m : ℕ) ,
     m ≥ 2 →
-    primorial (2*m + 1) / primorial (m+1) ≤ (choose (2*m + 1) (m+1)) := sorry
+    primorial (2*m + 1) / primorial (m+1) ≤ (choose (2*m + 1) (m+1)) :=
+begin
+    intros ,
+    rw primorial_ratio_eq_prod ,
+    
+end
 
 lemma primorial_2m_plus_1_le_choose : ∀ (m : ℕ) ,
     m ≥ 2 →
