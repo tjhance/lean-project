@@ -2,34 +2,35 @@ import data.nat.choose
 import data.nat.prime
 import data.nat.gcd
 import tactic.linarith
-import ring_theory.multiplicity
 
 open classical
-local attribute [instance] prop_decidable
+
+/-
+    https://en.wikipedia.org/wiki/Proof_of_Bertrand%27s_postulate
+-/
+
+/- "lemma 1" -/
 
 lemma four_n_bound : ∀ (n : ℕ) ,
     4 ^ n ≤ 2 * n * (choose (2*n) n) := sorry
 
---def R (p:ℕ) (n:ℕ) : ℕ := multiplicity p (choose (2*n) n)
+/- "lemma 2" -/
 
 lemma p_to_R_bound : ∀ (p:ℕ) (r:ℕ) (n:ℕ) ,
-    prime p →
+    nat.prime p →
     p ^ r ∣ (choose (2*n) n) →
     p ^ r ≤ 2*n := sorry
 
+/- "lemma 3" -/
+
 lemma central_primes_do_not_divide : ∀ (p n : ℕ) ,
-    prime p →
+    nat.prime p →
     p ≠ 2 →
     2*n / 3 < p →
     p ≤ n →
     ¬ (p ∣ (choose (2*n) n)) := sorry
 
-def primorial (n : ℕ) : ℕ :=
-    (list.filter nat.prime (list.range' 1 n)).prod
-
-def primorial_bound : ∀ (n : ℕ) ,
-    n ≥ 3 →
-    8 * primorial n < 2 ^ (2*n) := sorry
+/- range-related lemmas -/
 
 def range_to (n:ℕ) (m:ℕ) := list.range' n (m-n+1)
 
@@ -37,39 +38,138 @@ theorem range_to_append : ∀ (n m k : ℕ) ,
     n ≤ m → m ≤ k →
     range_to n m ++ range_to (m+1) k = range_to n k := sorry
 
+/- "lemma 4" -/
+
+def primorial (n : ℕ) : ℕ :=
+    (list.filter nat.prime (range_to 1 n)).prod
+
+lemma primorial_ratio_eq_prod : ∀ (n m : ℕ) ,
+    m ≤ n →
+    primorial n / primorial m =
+        (list.filter nat.prime (range_to (m+1) n)).prod := sorry
+
+lemma prime_list_dvd : ∀ (n m k : ℕ) ,
+    (∀ (p:ℕ) , nat.prime p → m+1 ≤ p → p ≤ n → p ∣ k) → 
+    (list.filter nat.prime (range_to (m+1) n)).prod ∣ k := sorry
+
+lemma p_dvd_choose_2m_plus_1_of_ge_m_plus_2 : ∀ (m p : ℕ) ,
+    nat.prime p →
+    m + 2 ≤ p →
+    p ≤ 2*m + 1 →
+    p ∣ choose (2*m+1) (m+1) := sorry
+
+lemma primorial_ratio_le_choose : ∀ (m : ℕ) ,
+    m ≥ 2 →
+    primorial (2*m + 1) / primorial (m+1) ≤ (choose (2*m + 1) (m+1)) := sorry
+
+lemma primorial_2m_plus_1_le_choose : ∀ (m : ℕ) ,
+    m ≥ 2 →
+    primorial (2*m + 1) ≤ primorial (m+1) * (choose (2*m + 1) (m+1)) := sorry
+
+lemma choose_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
+    choose (2*m + 1) (m+1) ≤ 2^(2*m) := sorry
+
+lemma primorial_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
+    m ≥ 2 →
+    primorial (2*m + 1) ≤ primorial (m+1) * 2^(2*m) := sorry
+
+lemma primorial_bound : ∀ (n : ℕ) ,
+    n ≥ 3 →
+    8 * primorial n < 2 ^ (2*n) := sorry
+
+/- prime factorization -/
+
 theorem factorize : ∀ (n m : ℕ) ,
-    (∀ p , prime p → p ∣ n → p ≤ m) →
-    (∃ (r : ℕ → ℕ) , (∀ (p:ℕ) , prime p → p ^ r p ∣ n) ∧ 
+    (∀ p , nat.prime p → p ∣ n → p ≤ m) →
+    (∃ (r : ℕ → ℕ) , (∀ (p:ℕ) , nat.prime p → p ^ r p ∣ n) ∧ 
         n = (((range_to 1 m).filter nat.prime).map
             (λ p , p ^ (r p))).prod
     ) := sorry
 
+lemma p_le_of_p_dvd_choose : ∀ (p n k : ℕ) ,
+    k ≤ n → nat.prime p → p ∣ (choose n k) → p ≤ n :=
+begin
+    intros ,
+    have q := @choose_mul_fact_mul_fact n k a,
+    have r : (p ∣ nat.fact n) := begin
+        cases a_2 , rw [a_2_h] at q , rw nat.mul_assoc at q ,
+        rw nat.mul_assoc at q , rw <- q , apply dvd_mul_right ,
+    end ,
+    rw [nat.prime.dvd_fact] at r , assumption ,
+    assumption ,
+end
+
+/- main result (bertrand's postulate for n ≥ 432 case) -/
+
+lemma two_thirds_n_bound : ∀ (n : ℕ) ,
+    n ≥ 468 → 
+    2 * n / 3 < 2 →
+    false := sorry
+
 lemma p_le_2n_over_3 : ∀ (n p : ℕ) ,
-    prime p →
+    (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
+    n ≥ 468 → 
+    nat.prime p →
     p ∣ (choose (2*n) n) →
-    p ≤ (2*n / 3) := sorry
+    p ≤ (2*n / 3) :=
+begin
+    intros ,
+    by_cases (p ≤ 2*n / 3) ,
+    {
+        assumption ,
+    },
+    simp at h , rename h p_bound ,
+    by_cases (p ≤ n) ,
+    {
+        have q := central_primes_do_not_divide p n a_2 (begin
+            /- show p > 2 -/
+            by_contradiction , simp at a_4 , rw a_4 at * ,
+            apply two_thirds_n_bound , assumption, assumption,
+        end) p_bound h ,
+        contradiction ,
+    },
+    simp at h , clear p_bound , rename h p_bound ,
+    {
+        have q := a p a_2 p_bound ,
+        have r := p_le_of_p_dvd_choose p (2*n) n a_2 a_3 ,
+        linarith ,
+    },
+end
 
 lemma factorize_choose_2n_n : ∀ (n : ℕ) ,
-    (∀ (x : ℕ), prime x → n < x → 2 * n < x) →
+    (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
+    n ≥ 468 → 
     ∃ (r : ℕ → ℕ) ,
-    (∀ (p:ℕ) , prime p → p ^ r p ∣ choose (2*n) n) ∧
+    (∀ (p:ℕ) , nat.prime p → p ^ r p ∣ choose (2*n) n) ∧
     (choose (2*n) n =
         (((range_to 1 (2*n/3)).filter nat.prime).map
-                (λ p , p ^ (r p))).prod) := sorry
+                (λ p , p ^ (r p))).prod) :=
+begin
+    intros ,
+    have f := factorize (choose (2*n) n) (2*n/3) (begin
+        intros , apply p_le_2n_over_3 , assumption, assumption, assumption,
+        assumption ,
+    end),
+    cases f , rename f_w r , cases f_h , rename f_h_left dvd_condition ,
+    rename f_h_right prod_condition ,
+    existsi r ,
+    split , assumption ,
+    rw prod_condition ,
+end
 
-theorem prime_bounds_1 : ∀ (n : ℕ) (r : ℕ → ℕ),
-    (∀ p , prime p → p ^ r p ∣ (choose (2*n) n)) →
+lemma prime_bounds_1 : ∀ (n : ℕ) (r : ℕ → ℕ),
+    (∀ p , nat.prime p → p ^ r p ∣ (choose (2*n) n)) →
     (((range_to 1 (nat.sqrt (2*n))).filter nat.prime).map
                 (λ p , p ^ (r p))).prod
     ≤ (2*n) ^ (nat.sqrt (2*n)) := sorry
 
-theorem prime_bounds_2 : ∀ (n : ℕ) (r : ℕ → ℕ),
-    (∀ p , prime p → p ^ r p ∣ (choose (2*n) n)) →
+lemma prime_bounds_2 : ∀ (n : ℕ) (r : ℕ → ℕ),
+    (∀ p , nat.prime p → p ^ r p ∣ (choose (2*n) n)) →
     (((range_to (nat.sqrt (2*n) + 1) (2*n/3)).filter nat.prime).map
                 (λ p , p ^ (r p))).prod
     ≤ primorial (2*n / 3) := sorry
 
-theorem main_bound : ∀ (n : ℕ) ,
+lemma main_bound : ∀ (n : ℕ) ,
     n ≥ 468 →
     2*n * ((2*n) ^ (nat.sqrt (2*n))) * (4 ^ (2*n/3)) < 4^n := sorry
 
@@ -86,13 +186,16 @@ lemma sqrt_le_2_3 : ∀ (n : ℕ) ,
 /- wtf why is this so hard? -/
 lemma obvious_calculation_312 : 312 = 2 * 468 / 3 := sorry
 
+/- TODO shouldn't need this (because bounded quantification) -/
+local attribute [instance] prop_decidable
+
 lemma bertrands_postulate_main : ∀ (n : ℕ) ,
     n ≥ 468 → 
-    ∃ p , prime p ∧ n < p ∧ p ≤ 2*n :=
+    ∃ p , nat.prime p ∧ n < p ∧ p ≤ 2*n :=
 begin
     intros , by_contradiction , simp at a_1 ,
 
-    have h := factorize_choose_2n_n n a_1 ,
+    have h := factorize_choose_2n_n n a_1 a ,
     cases h , rename h_w r , cases h_h ,
     rename h_h_left r_divides ,
     rename h_h_right choose_2n_n_factorization ,
@@ -158,6 +261,8 @@ begin
 
 end
 
+/- full bertrand's postulate -/
+
 theorem bertrands_postulate : ∀ (n : ℕ) ,
     n ≥ 1 →
-    ∃ p , prime p ∧ n < p ∧ p ≤ 2*n := sorry
+    ∃ p , nat.prime p ∧ n < p ∧ p ≤ 2*n := sorry
