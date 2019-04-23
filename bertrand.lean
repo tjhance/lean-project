@@ -94,17 +94,30 @@ lemma primorial_bound : ∀ (n : ℕ) ,
         cases h , rename h_w m , rw h_h at * ,
         cases m , simp at a , linarith ,
         have q : (nat.succ m) = (m+1) := rfl , rw q at * , clear q ,
-        have m_ge_1 : m ≥ 1 := sorry ,
+        have m_ge_1 : m ≥ 1 := by linarith ,
         rw primorial ,
         rw [<- @range_to_append 1 (2*m + 1) (2*(m+1))] ,
         {
         rw list.filter_append ,
-        have r : range_to (2 * m + 1 + 1) (2 * (m + 1)) = [2 * (m+1)] := sorry,
+        have r : range_to (2 * m + 1 + 1) (2 * (m + 1)) = [2 * (m+1)] :=
+            begin
+                rw [range_to, list.range', mul_add] , simp ,
+                have l : (1 + (1 + 2 * m)) = 2 + 2 * m := by ring,
+                rw l , simp , 
+            end,
         rw r ,
-        have s : list.filter nat.prime [2 * (m + 1)] = [] := sorry ,
+        have s : list.filter nat.prime [2 * (m + 1)] = [] :=
+            begin
+                rw [list.filter] , split_ifs ,
+                have t : ¬ (nat.prime (2 * (m+1))) := begin
+                    apply nat.not_prime_mul, linarith , linarith ,
+                end,
+                contradiction ,
+                rw [list.filter] , 
+            end ,
         rw s , simp ,
         have ih_bound : (1 + 2*m < (n+5)) := sorry ,
-        have ih := primorial_bound (2*m + 1) sorry ,
+        have ih := primorial_bound (2*m + 1) (by linarith) ,
         rw [<- primorial] ,
         rw nat.add_comm ,
         calc 8 * primorial (2 * m + 1) < 2 ^ (2 * (2 * m + 1)) : ih
@@ -114,10 +127,10 @@ lemma primorial_bound : ∀ (n : ℕ) ,
     },
     {
         cases h , rename h_w m , rw h_h at * ,
-        have m_ge_2 : m ≥ 2 := sorry ,
+        have m_ge_2 : m ≥ 2 := by linarith ,
         have h1 := primorial_2m_plus_1_le_power_2 m m_ge_2 ,
         have ih_bound : (m+1 < (n+5)) := sorry ,
-        have h2 := primorial_bound (m+1) sorry ,
+        have h2 := primorial_bound (m+1) (by linarith) ,
         calc 8 * primorial (2 * m + 1) ≤ 8 * primorial (m + 1) * 2 ^ (2*m) :        begin
                 rw nat.mul_assoc ,
                 apply nat.mul_le_mul_left , assumption ,
@@ -126,7 +139,9 @@ lemma primorial_bound : ∀ (n : ℕ) ,
             begin
                 rw mul_lt_mul_right , assumption , exact sorry
             end
-        ... = 2 ^ (2 * (2*m+1)) : sorry
+        ... = 2 ^ (2 * (2*m+1)) : begin
+            rw <- nat.pow_add , ring , 
+        end
     },
 end
 
