@@ -12,6 +12,8 @@ import algebra.big_operators
 import init.algebra.functions
 import algebra.group_power
 
+import data.nat.sqrt data.nat.gcd data.list.basic data.list.perm
+
 open classical
 
 /-
@@ -82,9 +84,62 @@ begin
     apply zero_lt_primorial ,
 end
 
+lemma coprime_list : ∀ (m n p : ℕ) ,
+    n < p →
+    nat.prime p →
+    nat.coprime (list.prod (list.filter nat.prime (range_to (m + 1) n))) p := sorry
+
 lemma prime_list_dvd : ∀ (n m k : ℕ) ,
     (∀ (p:ℕ) , nat.prime p → m+1 ≤ p → p ≤ n → p ∣ k) → 
-    (list.filter nat.prime (range_to (m+1) n)).prod ∣ k := sorry
+    (list.filter nat.prime (range_to (m+1) n)).prod ∣ k :=
+begin
+    intros, induction n ,
+    {
+        rw [range_to] , simp ,
+    },
+    {
+        by_cases (m ≤ n_n) ,
+        {
+            have h : range_to (m + 1) (nat.succ n_n) = range_to (m+1) n_n ++ range_to (n_n + 1) (n_n + 1) := begin
+                rw range_to_append , linarith , linarith ,
+            end,
+            rw h , rw list.filter_append , rw list.prod_append ,
+            have h1 : range_to (n_n + 1) (n_n + 1) = [n_n + 1] := by simp [range_to] ,
+            rw h1 , simp [list.filter] ,
+            split_ifs ,
+            {
+                 have h2 : list.prod [n_n + 1] = n_n + 1 := by simp ,
+                 rw h2 ,
+
+                 have n_n_plus_1_dvd_k := a (n_n + 1) h_1 (by linarith) (begin
+                    have t : nat.succ n_n = n_n + 1 := rfl , rw t ,
+                 end),
+                 apply nat.coprime.mul_dvd_of_dvd_of_dvd ,
+                 apply coprime_list , linarith , assumption ,
+                 apply n_ih , intros , apply a , assumption, assumption ,
+                 have h_3 : nat.succ n_n = n_n + 1 := rfl , rw h_3 , linarith ,
+                 assumption ,
+            },
+            {
+                simp , apply n_ih , intros , apply a , assumption, assumption, have h_3 : nat.succ n_n = n_n + 1 := rfl , rw h_3 , linarith ,
+            }
+        },
+        {
+            have h_3 : nat.succ n_n = n_n + 1 := rfl , rw h_3 ,
+            have t : n_n + 1 - m = 0 := begin
+                rw nat.sub_eq_zero_iff_le , simp at h ,
+                apply nat.le_of_lt_succ ,
+                have h_4 : nat.succ m = m + 1 := rfl , rw h_4 ,
+                linarith ,
+            end,
+            have h : range_to (m + 1) (n_n + 1) = [] := begin
+                rw [range_to] , simp at h , rw nat.add_sub_cancel ,
+                rw t , simp , 
+            end,
+            rw h , simp , 
+        }
+    }
+end
 
 lemma p_dvd_choose_2m_plus_1_of_ge_m_plus_2 : ∀ (m p : ℕ) ,
     nat.prime p →
@@ -120,7 +175,17 @@ lemma primorial_ratio_le_choose : ∀ (m : ℕ) ,
 begin
     intros ,
     rw primorial_ratio_eq_prod ,
-    exact sorry ,
+    apply nat.le_of_dvd ,
+    {
+        apply choose_pos , linarith ,
+    },
+    {
+        apply prime_list_dvd , intros , apply p_dvd_choose_2m_plus_1_of_ge_m_plus_2 , assumption, linarith , assumption ,
+    },
+    {
+        linarith ,
+    },
+    
 end
 
 lemma primorial_2m_plus_1_le_choose : ∀ (m : ℕ) ,
@@ -163,23 +228,50 @@ end
 
 lemma primorial_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
     m ≥ 2 →
-    primorial (2*m + 1) ≤ primorial (m+1) * 2^(2*m) := sorry
+    primorial (2*m + 1) ≤ primorial (m+1) * 2^(2*m) :=
+begin
+    intros ,
+    calc primorial (2*m + 1) ≤
+         primorial (m+1) * (choose (2*m + 1) (m+1)) : 
+            primorial_2m_plus_1_le_choose m a
+    ... ≤ primorial (m+1) * 2^(2*m) :
+        begin
+            apply nat.mul_le_mul_left ,
+            apply choose_2m_plus_1_le_power_2 ,
+        end
+end
 
 lemma case_by_parity : ∀ (n : ℕ) ,
     (∃ (m:ℕ) , n = 2*m) ∨ (∃ (m:ℕ) , n = 2*m + 1) := sorry
 
 lemma le_2_pow_2_mul_2_mul_plus_1 : ∀ (m : ℕ) ,
-    2 ^ (2 * (2 * m + 1)) ≤ 2 ^ (2 * (2 * (m + 1))) := sorry
+    2 ^ (2 * (2 * m + 1)) ≤ 2 ^ (2 * (2 * (m + 1))) :=
+begin
+    intros ,
+    apply nat.pow_le_pow_of_le_right , linarith ,
+    linarith ,
+end
 
-lemma primorial_bound : ∀ (n : ℕ) ,
+/-
+open decidable
+local attribute [instance] nat.decidable_prime_1
+lemma three_prime : nat.prime 3 := dec_trivial
+-/
+
+lemma primorial_bound_aux : ∀ (bound n : ℕ) ,
+    n < bound →
     n ≥ 3 →
     8 * primorial n < 2 ^ (2*n)
-| 0 := sorry
-| 1 := sorry
-| 2 := sorry
-| 3 := sorry
-| 4 := sorry
-| (n+5) := begin
+| 0 n :=
+    begin
+        intros , linarith , 
+    end
+| (bound+1) 0 := begin intros , linarith end 
+| (bound+1) 1 := begin intros , linarith end
+| (bound+1) 2 := begin intros , linarith end
+| (bound+1) 3 := sorry
+| (bound+1) 4 := sorry
+| (bound+1) (n+5) := begin
     intros ,
     cases (case_by_parity (n+5)) ,
     {
@@ -193,9 +285,15 @@ lemma primorial_bound : ∀ (n : ℕ) ,
         rw list.filter_append ,
         have r : range_to (2 * m + 1 + 1) (2 * (m + 1)) = [2 * (m+1)] :=
             begin
-                rw [range_to, list.range', mul_add] , simp ,
-                have l : (1 + (1 + 2 * m)) = 2 + 2 * m := by ring,
-                rw l , simp , 
+                rw [range_to] , rw nat.add_sub_cancel ,
+                have q' : 2 * (m + 1) = 1 + (2 * m + 1) := by ring ,
+                have q : 2 * (m + 1) - (2 * m + 1) = 1 := begin
+                    rw q', rw nat.add_sub_cancel ,
+                end,
+                rw q ,
+                rw [list.range', list.range'],
+                have l : (2 * m + 1 + 1) = 2 * (m + 1) := by ring,
+                rw l ,
             end,
         rw r ,
         have s : list.filter nat.prime [2 * (m + 1)] = [] :=
@@ -208,8 +306,9 @@ lemma primorial_bound : ∀ (n : ℕ) ,
                 rw [list.filter] , 
             end ,
         rw s , simp ,
-        have ih_bound : (1 + 2*m < (n+5)) := sorry ,
-        have ih := primorial_bound (2*m + 1) (by linarith) ,
+        have ih_bound : (2*m + 1 < bound) := by linarith ,
+        have ih := primorial_bound_aux
+            bound (2*m + 1) ih_bound (by linarith) ,
         rw [<- primorial] ,
         rw nat.add_comm ,
         calc 8 * primorial (2 * m + 1) < 2 ^ (2 * (2 * m + 1)) : ih
@@ -221,20 +320,30 @@ lemma primorial_bound : ∀ (n : ℕ) ,
         cases h , rename h_w m , rw h_h at * ,
         have m_ge_2 : m ≥ 2 := by linarith ,
         have h1 := primorial_2m_plus_1_le_power_2 m m_ge_2 ,
-        have ih_bound : (m+1 < (n+5)) := sorry ,
-        have h2 := primorial_bound (m+1) (by linarith) ,
+        have ih_bound : (m+1 < bound) := by linarith ,
+        have h2 := primorial_bound_aux bound (m+1) ih_bound (by linarith) ,
         calc 8 * primorial (2 * m + 1) ≤ 8 * primorial (m + 1) * 2 ^ (2*m) :        begin
                 rw nat.mul_assoc ,
                 apply nat.mul_le_mul_left , assumption ,
               end
         ... < 2 ^ (2 * (m+1)) * 2 ^ (2*m) :
             begin
-                rw mul_lt_mul_right , assumption , exact sorry
+                rw mul_lt_mul_right , assumption ,
+                apply nat.pos_pow_of_pos , linarith ,
             end
         ... = 2 ^ (2 * (2*m+1)) : begin
             rw <- nat.pow_add , ring , 
         end
     },
+end
+
+lemma primorial_bound : ∀ (n : ℕ) ,
+    n ≥ 3 →
+    8 * primorial n < 2 ^ (2*n) :=
+begin
+    intros , 
+    apply (primorial_bound_aux (n+1) n) ,
+    linarith , assumption ,
 end
 
 /- prime factorization -/
