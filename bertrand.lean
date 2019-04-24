@@ -1,7 +1,16 @@
 import data.nat.choose
 import data.nat.prime
 import data.nat.gcd
+import data.list
 import tactic.linarith
+
+import data.set.finite
+import data.multiset
+import data.finset
+import data.finset algebra.big_operators
+import algebra.big_operators
+import init.algebra.functions
+import algebra.group_power
 
 open classical
 
@@ -32,7 +41,7 @@ lemma central_primes_do_not_divide : ∀ (p n : ℕ) ,
 
 /- range-related lemmas -/
 
-def range_to (n:ℕ) (m:ℕ) := list.range' n (m-n+1)
+def range_to (n:ℕ) (m:ℕ) := list.range' n (m-(n-1))
 
 theorem range_to_append : ∀ (n m k : ℕ) ,
     n ≤ m+1 → m ≤ k →
@@ -43,8 +52,18 @@ theorem range_to_append : ∀ (n m k : ℕ) ,
 def primorial (n : ℕ) : ℕ :=
     (list.filter nat.prime (range_to 1 n)).prod
 
+lemma primorial_induction : ∀ (n : ℕ) ,
+    primorial (n+1) = (if nat.prime (n+1) then primorial n * (n+1) else primorial n) := sorry
+
 lemma zero_lt_primorial : ∀ (n : ℕ) ,
-    0 < primorial n := sorry
+    0 < primorial n :=
+begin
+    intros , induction n, 
+    simp [primorial, list.filter, range_to, list.prod] , linarith ,
+    rw primorial_induction ,
+    split_ifs , rw mul_add , simp , linarith ,
+    assumption ,
+end
 
 lemma primorial_ratio_eq_prod : ∀ (n m : ℕ) ,
     m ≤ n →
@@ -101,15 +120,46 @@ lemma primorial_ratio_le_choose : ∀ (m : ℕ) ,
 begin
     intros ,
     rw primorial_ratio_eq_prod ,
-    
+    exact sorry ,
 end
 
 lemma primorial_2m_plus_1_le_choose : ∀ (m : ℕ) ,
     m ≥ 2 →
     primorial (2*m + 1) ≤ primorial (m+1) * (choose (2*m + 1) (m+1)) := sorry
 
+lemma finset_sum_finset_range_eq_sum_range : ∀ (f: ℕ → ℕ) (n : ℕ) ,
+    finset.sum (finset.range n) f = ((list.range n).map f).sum := sorry
+
 lemma choose_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
-    choose (2*m + 1) (m+1) ≤ 2^(2*m) := sorry
+    choose (2*m + 1) (m+1) ≤ 2^(2*m) :=
+begin
+    intros ,
+    have t := (
+        calc 2 * 2^(2*m) = 2^(2*m+1) : sorry
+        ... = ((1:ℕ) + (1:ℕ))^(2*m+1) : by simp
+    ),
+    have h := add_pow 1 1 (2*m+1) , simp at h ,
+    simp at t , rw h at t , clear h,
+
+    rw finset_sum_finset_range_eq_sum_range at t,
+    
+    have l : list.range (nat.succ (1 + 2 * m)) =
+        list.range' 0 m ++
+        list.range' m 2 ++
+        list.range' (m+2) m := sorry ,
+    rw l at t ,
+    rw [list.map_append, list.map_append, list.sum_append, list.sum_append] at t , 
+    have t' : 2 * 2 ^ (2 * m) ≥ 
+        list.sum (list.map (choose (1 + 2 * m)) (list.range' m 2)) := by linarith ,
+    clear t,
+    simp at t' ,
+
+    have q : choose (1 + 2 * m) m = choose (1 + 2 * m) (m+1) := sorry ,
+    rw q at t' , 
+    have q' : choose (1 + 2 * m) (m + 1) + choose (1 + 2 * m) (m + 1) = 2 * choose (1 + 2 * m) (m + 1) := by ring ,
+    rw q' at t' ,
+    simp , linarith ,
+end
 
 lemma primorial_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
     m ≥ 2 →
