@@ -20,6 +20,33 @@ open classical
     https://en.wikipedia.org/wiki/Proof_of_Bertrand%27s_postulate
 -/
 
+/- Primes dividing choose -/
+
+def log : ℕ → ℕ → ℕ 
+| 0 _ := 0
+| 1 _ := 0
+| _ 0 := 0
+| (p+2) (n+1) := if (n+1) < (p+2) then 0 else (
+    have h : (n+1)/(p+2) < n+1, from begin
+        calc (n + 1) / (p + 2) ≤ (n+1) / 2 : sorry
+        ... < (n+1) / 1 : sorry
+        ... = n+1 : by simp
+    end,
+    log (p+2) ((n+1)/(p+2)) + 1
+)
+
+/- This is a closed form for the largest exponent
+    r such that p^r divides (choose n k). -/
+def lpdc (n:ℕ) (k:ℕ) (p:ℕ) :=
+    ((list.range' 1 (log p n)).map
+        (λ (i:ℕ) , if (k % (p^i)) + ((n-k) % (p^i)) ≥ p^i then 1 else 0)).sum
+
+theorem p_pow_lpdc_dvd_choose : ∀ (n k p : ℕ) ,
+    p ^ lpdc n k p ∣ choose n k := sorry
+
+theorem exp_le_lpdc_of_dvd_choose : ∀ (n k p r : ℕ) ,
+    p ^ r ∣ choose n k → r ≤ lpdc n k p
+
 /- "lemma 1" -/
 
 lemma four_n_bound : ∀ (n : ℕ) ,
@@ -258,6 +285,8 @@ local attribute [instance] nat.decidable_prime_1
 lemma three_prime : nat.prime 3 := dec_trivial
 -/
 
+local attribute [instance] nat.decidable_prime_1
+
 lemma primorial_bound_aux : ∀ (bound n : ℕ) ,
     n < bound →
     n ≥ 3 →
@@ -269,8 +298,27 @@ lemma primorial_bound_aux : ∀ (bound n : ℕ) ,
 | (bound+1) 0 := begin intros , linarith end 
 | (bound+1) 1 := begin intros , linarith end
 | (bound+1) 2 := begin intros , linarith end
-| (bound+1) 3 := sorry
-| (bound+1) 4 := sorry
+| (bound+1) 3 :=
+    begin
+        intros ,
+        have p1 : ¬ (nat.prime 1) := dec_trivial ,
+        have p2 : (nat.prime 2) := dec_trivial ,
+        have p3 : (nat.prime 3) := dec_trivial ,
+        rw [primorial, range_to] , norm_num ,
+        simp [list.filter, list.prod, p1, p2, p3],
+        norm_num, 
+    end
+| (bound+1) 4 :=
+    begin
+        intros ,
+        have p1 : ¬ (nat.prime 1) := dec_trivial ,
+        have p2 : (nat.prime 2) := dec_trivial ,
+        have p3 : (nat.prime 3) := dec_trivial ,
+        have p4 : ¬ (nat.prime 4) := dec_trivial ,
+        rw [primorial, range_to] , norm_num ,
+        simp [list.filter, list.prod, p1, p2, p3, p4],
+        norm_num, 
+    end
 | (bound+1) (n+5) := begin
     intros ,
     cases (case_by_parity (n+5)) ,
@@ -373,7 +421,21 @@ end
 lemma two_thirds_n_bound : ∀ (n : ℕ) ,
     n ≥ 468 → 
     2 * n / 3 < 2 →
-    false := sorry
+    false :=
+begin
+    intros ,
+    have t := (
+        calc 2 < 2 * 468 / 3 : by norm_num
+        ... ≤ 2 * n / 3 : begin
+            apply nat.div_le_div_right , linarith ,
+        end
+        ... < 2 : a_1
+    ),
+    contradiction ,
+end
+
+lemma sqrt_le_2_3 : ∀ (n : ℕ) ,
+    468 ≤ n → nat.sqrt (2 * n) ≤ 2 * n / 3 := sorry
 
 lemma p_le_2n_over_3 : ∀ (n p : ℕ) ,
     (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
@@ -400,10 +462,16 @@ begin
     simp at h , clear p_bound , rename h p_bound ,
     {
         have q := a p a_2 p_bound ,
-        have r := p_le_of_p_dvd_choose p (2*n) n a_2 a_3 ,
+        have r := p_le_of_p_dvd_choose p (2*n) n (by linarith) a_2 a_3 ,
         linarith ,
     },
 end
+
+lemma p_at_most_1_in_choose_of_gt_sqrt : ∀ (p n r : ℕ) ,
+    nat.prime p → 
+    p > nat.sqrt (2*n) →
+    p ^ r ∣ choose (2*n) n →
+    r ≤ 1 := sorry
 
 lemma factorize_choose_2n_n : ∀ (n : ℕ) ,
     (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
@@ -426,17 +494,126 @@ begin
     rw prod_condition ,
 end
 
+lemma prod_le_prod : ∀ (l : list ℕ) (f g : ℕ → ℕ) ,
+    (∀ (x:ℕ) , x ∈ l → f x ≤ g x) → 
+    (l.map f).prod ≤ (l.map g).prod := sorry
+
+lemma prod_repeat_eq_pow : ∀ (a b : ℕ) ,
+    list.prod (list.repeat a b) = a ^ b :=
+begin
+    intros , 
+    induction b ,
+    simp , simp ,
+    rw nat.pow_succ , rw nat.mul_comm , 
+end
+
+lemma length_filter_le_length {α : Type} (p : α → Prop) [decidable_pred p] : ∀ (l : list α) ,
+    list.length (l.filter p) ≤ list.length l :=
+begin
+    intros ,
+    induction l , simp , simp , rw [list.filter] , split_ifs ,
+    simp , assumption , linarith ,
+end
+
 lemma prime_bounds_1 : ∀ (n : ℕ) (r : ℕ → ℕ),
     (∀ p , nat.prime p → p ^ r p ∣ (choose (2*n) n)) →
     (((range_to 1 (nat.sqrt (2*n))).filter nat.prime).map
                 (λ p , p ^ (r p))).prod
-    ≤ (2*n) ^ (nat.sqrt (2*n)) := sorry
+    ≤ (2*n) ^ (nat.sqrt (2*n)) :=
+begin
+    intros ,
+    by_cases (n ≥ 1) ,
+    {
+        have h := prod_le_prod 
+            ((range_to 1 (nat.sqrt (2*n))).filter nat.prime)
+            (λ p , p ^ (r p))
+            (λ p , 2 * n)
+            (begin
+                intros, simp ,
+                simp at a_1 , cases a_1 ,
+                apply p_to_R_bound , assumption , apply a , assumption, 
+            end),
+        exact (nat.le_trans h (begin
+            rw list.map_const , rw prod_repeat_eq_pow ,
+            apply nat.pow_le_pow_of_le_right,
+            linarith ,
+            have l : (nat.sqrt (2 * n)) = list.length (range_to 1 (nat.sqrt (2 * n))) := begin
+                rw [range_to] , rw [list.length_range'] , ring , 
+            end,
+            have len_le := length_filter_le_length nat.prime (range_to 1 (nat.sqrt (2 * n))) ,
+            rw <- l at len_le ,
+            assumption ,
+        end)),
+    },
+    {
+        simp at h ,
+        have t : (nat.sqrt 0 = 0) := rfl ,
+        rw h , norm_num , rw [range_to] , rw t , simp , 
+    }
+end
 
 lemma prime_bounds_2 : ∀ (n : ℕ) (r : ℕ → ℕ),
+    n ≥ 468 → 
     (∀ p , nat.prime p → p ^ r p ∣ (choose (2*n) n)) →
     (((range_to (nat.sqrt (2*n) + 1) (2*n/3)).filter nat.prime).map
                 (λ p , p ^ (r p))).prod
-    ≤ primorial (2*n / 3) := sorry
+    ≤ primorial (2*n / 3) :=
+begin
+    intros ,
+    have h := prod_le_prod 
+        ((range_to (nat.sqrt (2*n) + 1) (2*n/3)).filter nat.prime)
+        (λ p , p ^ (r p))
+        id
+        (begin
+            intros , simp at a_2, rw [range_to] at a_2 , simp at a_2 ,
+            cases a_2 , cases a_2_left , 
+            simp ,
+            have t : x ^ r x ≤ x ^ 1 := begin
+                apply nat.pow_le_pow_of_le_right , linarith ,
+                apply p_at_most_1_in_choose_of_gt_sqrt x n (r x) ,
+                assumption , linarith , apply a_1 , assumption ,
+            end,
+            simp at t,
+            assumption ,
+        end),
+    exact (nat.le_trans h (begin
+        rw list.map_id ,
+        rw primorial , 
+        have rsplit : range_to 1 (2 * n / 3) =
+            range_to 1 (nat.sqrt (2 * n)) ++
+            range_to (nat.sqrt (2 * n) + 1) (2 * n / 3) :=
+                begin
+                    rw range_to_append , linarith ,
+                    apply sqrt_le_2_3 , assumption ,
+                end,
+        rw rsplit ,
+        rw list.filter_append ,
+        rw list.prod_append ,
+        calc
+            list.prod (list.filter nat.prime (range_to (nat.sqrt (2 * n) + 1) (2 * n / 3))) =
+                1 * list.prod (list.filter nat.prime (range_to (nat.sqrt (2 * n) + 1) (2 * n / 3))) :
+                begin
+                    ring ,
+                end
+        ... ≤
+                primorial (nat.sqrt (2 * n)) *
+                list.prod (list.filter nat.prime (range_to (nat.sqrt (2 * n) + 1) (2 * n / 3))) :
+                begin
+                    apply nat.mul_le_mul_right,
+                    apply nat.le_of_lt_succ ,
+                    have x : nat.succ (primorial (nat.sqrt (2 * n))) = primorial (nat.sqrt (2 * n)) + 1 := rfl ,
+                    rw x ,
+                    have t := zero_lt_primorial (nat.sqrt (2 * n)) ,
+                    linarith ,
+                end
+        ... =
+                list.prod (list.filter nat.prime (range_to 1 (nat.sqrt (2 * n)))) *
+                list.prod (list.filter nat.prime (range_to (nat.sqrt (2 * n) + 1) (2 * n / 3))) :
+                begin
+                    rw [primorial] , 
+                end
+    end))
+end
 
 lemma main_bound : ∀ (n : ℕ) ,
     n ≥ 468 →
@@ -446,23 +623,38 @@ lemma b_lt_c_of_ab_lt_c : ∀ (a b c : ℕ) ,
     a > 0 → 
     a*b < c → b < c := sorry
 
-lemma one_le_sqrt : ∀ (n : ℕ) ,
-    468 ≤ n → 1 ≤ nat.sqrt (2 * n) := sorry
+/- copied from assignment 3, surprised I couldn't find this built-in? -/
 
-lemma sqrt_le_2_3 : ∀ (n : ℕ) ,
-    468 ≤ n → nat.sqrt (2 * n) ≤ 2 * n / 3 := sorry
+theorem e1 {α : Type} : ∀ (p : α → Prop) , (¬ ∃ x, p x) → ∀ x, ¬ p x :=
+  assume p : α → Prop ,
+  assume h : (¬ ∃ x, p x) ,
+  assume x : α ,
+  not.intro (
+    assume g : p x ,
+    absurd (exists.intro x g) h
+  )
 
-/- wtf why is this so hard? -/
-lemma obvious_calculation_312 : 312 = 2 * 468 / 3 := sorry
-
-/- TODO shouldn't need this (because bounded quantification) -/
-local attribute [instance] prop_decidable
+theorem exists_of_not_forall {α : Type} : ∀ (p : α → Prop) , (¬ ∀ x, ¬ p x) → ∃ x, p x :=
+  assume p : α → Prop ,
+  assume g : (¬ ∀ x, ¬ p x) ,
+  or.elim (em (∃ x, p x))
+  (
+    assume h : (∃ x, p x) ,
+    h
+  )
+  (
+    assume h : ¬ (∃ x, p x) ,
+    absurd (e1 p h) g
+  )
 
 lemma bertrands_postulate_main : ∀ (n : ℕ) ,
     n ≥ 468 → 
     ∃ p , nat.prime p ∧ n < p ∧ p ≤ 2*n :=
 begin
-    intros , by_contradiction , simp at a_1 ,
+    intros ,
+    apply exists_of_not_forall ,
+    by_contradiction ,
+    simp at a_1 ,
 
     have h := factorize_choose_2n_n n a_1 a ,
     cases h , rename h_w r , cases h_h ,
@@ -472,7 +664,9 @@ begin
     have t := (
     calc 4^n ≤ 2*n * (choose (2*n) n) : four_n_bound n
     ... = 2*n * (((range_to 1 (2*n/3)).filter nat.prime).map
-                (λ p , p ^ (r p))).prod : by rw choose_2n_n_factorization
+                (λ p , p ^ (r p))).prod : begin
+                     rw <- choose_2n_n_factorization,
+                end
     ... = 2*n *
             (((range_to 1 (nat.sqrt (2*n))).filter nat.prime).map
                 (λ p , p ^ (r p))).prod *
@@ -484,7 +678,7 @@ begin
                 rw <- list.map_append ,
                 rw <- list.filter_append ,
                 rw <- range_to_append ,
-                apply one_le_sqrt , assumption ,
+                linarith , 
                 apply sqrt_le_2_3 , assumption ,
             end
     ... ≤ 2*n *
@@ -509,7 +703,7 @@ begin
             begin
                 have q := (calc
                         (3:ℕ) ≤ 312 : (by linarith)
-                        ... = 2 * 468 / 3 : obvious_calculation_312
+                        ... = 2 * 468 / 3 : by norm_num
                         ... ≤ 2 * n / 3 : begin
                             apply nat.div_le_div_right ,
                             apply nat.mul_le_mul_left ,
