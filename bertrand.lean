@@ -22,6 +22,8 @@ open classical
 
 /- Primes dividing choose -/
 
+/- Define a floor log function for natural numbers.
+    TODO does this already exist somewhere? -/
 def log : ℕ → ℕ → ℕ 
 | 0 _ := 0
 | 1 _ := 0
@@ -35,6 +37,9 @@ def log : ℕ → ℕ → ℕ
     log (p+2) ((n+1)/(p+2)) + 1
 )
 
+theorem pow_log_le : ∀ (a b : ℕ) ,
+    a ^ (log a b) ≤ b := sorry
+
 /- This is a closed form for the largest exponent
     r such that p^r divides (choose n k). -/
 def lpdc (n:ℕ) (k:ℕ) (p:ℕ) :=
@@ -45,7 +50,12 @@ theorem p_pow_lpdc_dvd_choose : ∀ (n k p : ℕ) ,
     p ^ lpdc n k p ∣ choose n k := sorry
 
 theorem exp_le_lpdc_of_dvd_choose : ∀ (n k p r : ℕ) ,
-    p ^ r ∣ choose n k → r ≤ lpdc n k p
+    p ^ r ∣ choose n k → r ≤ lpdc n k p := sorry
+
+-- Which has this corollary:
+
+lemma exp_le_log_of_dvd_choose : ∀ (n k p r : ℕ) ,
+    p ^ r ∣ choose n k → r ≤ log p n := sorry
 
 /- "lemma 1" -/
 
@@ -57,16 +67,89 @@ lemma four_n_bound : ∀ (n : ℕ) ,
 lemma p_to_R_bound : ∀ (p:ℕ) (r:ℕ) (n:ℕ) ,
     nat.prime p →
     p ^ r ∣ (choose (2*n) n) →
-    p ^ r ≤ 2*n := sorry
+    p ^ r ≤ 2*n :=
+begin
+    intros ,
+    have h : r ≤ log p (2*n) := exp_le_log_of_dvd_choose (2*n) n p r a_1,
+    calc p ^ r ≤ p ^ (log p (2*n)) : begin
+        apply nat.pow_le_pow_of_le_right ,
+        cases p ,
+        have q : ¬ nat.prime 0 := dec_trivial , contradiction ,
+        rw nat.succ_eq_add_one , linarith ,
+        assumption ,
+    end
+        ... ≤ 2*n : begin
+        apply pow_log_le ,
+    end
+end
 
 /- "lemma 3" -/
+
+theorem log_p_eq_1 : ∀ (p n) ,
+    p ≥ 3 → 2*n / 3 < p → p ≤ n → 
+    log p (2*n) = 1 := sorry
 
 lemma central_primes_do_not_divide : ∀ (p n : ℕ) ,
     nat.prime p →
     p ≠ 2 →
     2*n / 3 < p →
     p ≤ n →
-    ¬ (p ∣ (choose (2*n) n)) := sorry
+    ¬ (p ∣ (choose (2*n) n)) :=
+begin
+    intros , by_contradiction , 
+    have h := exp_le_lpdc_of_dvd_choose (2*n) n p 1 (begin
+        simp , assumption ,
+    end) ,
+
+    have log_1 : log p (2*n) = 1 := begin
+        apply log_p_eq_1 ,
+        cases p ,
+        have h : ¬ (nat.prime 0) := dec_trivial ,
+        contradiction ,
+        cases p , 
+        have h : ¬ (nat.prime 1) := dec_trivial ,
+        contradiction ,
+        cases p ,
+        contradiction ,
+        rw nat.succ_eq_add_one , 
+        rw nat.succ_eq_add_one , 
+        rw nat.succ_eq_add_one ,
+        linarith , assumption, assumption ,
+    end, 
+
+    have j : lpdc (2 * n) n p = 0 := begin
+        rw [lpdc] , rw log_1 , rw [list.range'] ,
+        simp , 
+        have l : ¬(n % p + (2 * n - n) % p ≥ p) := begin
+            simp , rw two_mul , rw nat.add_sub_cancel ,
+            rw <- two_mul , 
+            have t : n = (n - p) + p := begin
+                rw nat.sub_add_cancel , assumption ,
+            end,
+            rw t , simp , 
+            have s : ((n - p) % p) ≤ n-p := begin
+                apply nat.mod_le ,
+            end,
+            have r : 2*n < 3*p := begin
+                rw [@nat.mul_comm 3 p] ,
+                rw <- nat.div_lt_iff_lt_mul' , assumption ,
+                norm_num ,
+            end ,
+            have q : 2*(n-p) < p := begin
+                rw nat.mul_sub_left_distrib ,
+                calc 2*n - 2*p < 3*p - 2*p :
+                    begin
+                        rw nat.sub_lt_sub_right_iff , assumption , linarith ,
+                    end
+                ... = (3-2)*p : by rw nat.mul_sub_right_distrib
+                ... = p : by norm_num
+            end,
+            linarith ,
+        end,
+        simp [l] , 
+    end,
+    rw j at h , linarith ,
+end
 
 /- range-related lemmas -/
 
@@ -278,12 +361,6 @@ begin
     apply nat.pow_le_pow_of_le_right , linarith ,
     linarith ,
 end
-
-/-
-open decidable
-local attribute [instance] nat.decidable_prime_1
-lemma three_prime : nat.prime 3 := dec_trivial
--/
 
 local attribute [instance] nat.decidable_prime_1
 
