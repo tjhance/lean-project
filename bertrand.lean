@@ -352,7 +352,15 @@ begin
 end
 
 lemma case_by_parity : ∀ (n : ℕ) ,
-    (∃ (m:ℕ) , n = 2*m) ∨ (∃ (m:ℕ) , n = 2*m + 1) := sorry
+    (∃ (m:ℕ) , n = 2*m) ∨ (∃ (m:ℕ) , n = 2*m + 1) :=
+begin
+    intros , induction n ,
+    left , existsi 0, norm_num ,
+    cases n_ih ,
+    cases n_ih , right , existsi n_ih_w , rw n_ih_h ,
+    cases n_ih , left , existsi (n_ih_w + 1) , rw n_ih_h ,
+    rw nat.succ_eq_add_one , ring , 
+end
 
 lemma le_2_pow_2_mul_2_mul_plus_1 : ∀ (m : ℕ) ,
     2 ^ (2 * (2 * m + 1)) ≤ 2 ^ (2 * (2 * (m + 1))) :=
