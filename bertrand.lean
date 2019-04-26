@@ -7,12 +7,6 @@ import tactic.linarith
 import data.set.finite
 import data.multiset
 import data.finset
-import data.finset algebra.big_operators
-import algebra.big_operators
-import init.algebra.functions
-import algebra.group_power
-
-import data.nat.sqrt data.nat.gcd data.list.basic data.list.perm
 
 open classical
 
@@ -197,7 +191,42 @@ end
 lemma coprime_list : ∀ (m n p : ℕ) ,
     n < p →
     nat.prime p →
-    nat.coprime (list.prod (list.filter nat.prime (range_to (m + 1) n))) p := sorry
+    nat.coprime (list.prod (list.filter nat.prime (range_to (m + 1) n))) p :=
+begin
+    intros , rw [range_to] , rw [nat.add_sub_cancel] ,
+    by_cases (n < m),
+    {
+        have q : n-m = 0 := begin rw nat.sub_eq_zero_iff_le , apply nat.le_of_lt , assumption end,
+        rw q , simp , 
+    },
+    have j : n - m + m = n := begin
+        rw nat.sub_add_cancel , simp at h , assumption ,
+    end,
+    rw <- j at a,
+    revert a , induction (n-m) ,
+    {
+        intros , simp ,
+    },
+    {
+        intros , rw nat.succ_eq_add_one ,
+        have k : list.range' (m + 1) (n_1 + 1) =
+            list.range' (m + 1) n_1 ++
+            list.range' (m + 1 + n_1) 1 := begin
+            rw list.range'_append , rw nat.add_comm ,
+            rw [@nat.add_comm 1 n_1] ,
+        end,
+        have k' : list.range' (m + 1 + n_1) 1 = [m + 1 + n_1] := by simp ,
+        rw k' at k , rw k , rw list.filter_append , rw list.prod_append ,
+        apply nat.coprime.mul ,
+        apply ih , rw nat.succ_eq_add_one at a , linarith ,
+        rw [list.filter] , split_ifs , simp ,
+        rw [@nat.add_comm n_1 1] , rw <- nat.add_assoc , 
+        rw nat.coprime_primes , rw nat.succ_eq_add_one at a ,
+        by_contradiction , simp at a_2 , linarith , 
+        assumption , assumption , 
+        simp , 
+    }
+end
 
 lemma prime_list_dvd : ∀ (n m k : ℕ) ,
     (∀ (p:ℕ) , nat.prime p → m+1 ≤ p → p ≤ n → p ∣ k) → 
