@@ -7,12 +7,25 @@ import tactic.linarith
 import data.set.finite
 import data.multiset
 import data.finset
+import data.finsupp
 
 open classical
+
+local attribute [instance] nat.decidable_prime_1
 
 /-
     https://en.wikipedia.org/wiki/Proof_of_Bertrand%27s_postulate
 -/
+
+/- Misc lemmas -/
+
+lemma prod_le_prod : ∀ (l : list ℕ) (f g : ℕ → ℕ) ,
+    (∀ (x:ℕ) , x ∈ l → f x ≤ g x) → 
+    (l.map f).prod ≤ (l.map g).prod := sorry
+
+lemma sum_le_sum : ∀ (l : list ℕ) (f g : ℕ → ℕ) ,
+    (∀ (x:ℕ) , x ∈ l → f x ≤ g x) → 
+    (l.map f).sum ≤ (l.map g).sum := sorry
 
 /- Primes dividing choose -/
 
@@ -49,7 +62,20 @@ theorem exp_le_lpdc_of_dvd_choose : ∀ (n k p r : ℕ) ,
 -- Which has this corollary:
 
 lemma exp_le_log_of_dvd_choose : ∀ (n k p r : ℕ) ,
-    p ^ r ∣ choose n k → r ≤ log p n := sorry
+    p ^ r ∣ choose n k → r ≤ log p n :=
+begin
+    intros , 
+    have h : r ≤ lpdc n k p := exp_le_lpdc_of_dvd_choose n k p r a,
+    rw [lpdc] at h , 
+    have h' := sum_le_sum (list.range' 1 (log p n))
+        (λ (i : ℕ), ite (k % p ^ i + (n - k) % p ^ i ≥ p ^ i) 1 0)
+        (λ (i : ℕ), 1)
+        (begin
+            intros , intros , simp , split_ifs , linarith , linarith ,
+        end),
+    simp at h' ,
+    linarith ,
+end
 
 /- "lemma 1" -/
 
@@ -171,19 +197,26 @@ begin
     assumption ,
 end
 
+lemma primorial_eq_primorial_mul_primes : ∀ (n m : ℕ) ,
+    m ≤ n → 
+    primorial n = primorial m *
+        (list.filter nat.prime (range_to (m+1) n)).prod :=
+begin
+    intros ,
+    rw [primorial, primorial] ,
+        rw <- list.prod_append,
+        rw <- list.filter_append ,
+        rw <- range_to_append ,
+        linarith, linarith ,
+end
+
 lemma primorial_ratio_eq_prod : ∀ (n m : ℕ) ,
     m ≤ n →
     primorial n / primorial m =
         (list.filter nat.prime (range_to (m+1) n)).prod :=
 begin
     intros , 
-    have h : primorial n = primorial m * (list.filter nat.prime (range_to (m+1) n)).prod := begin
-        rw [primorial, primorial] ,
-        rw <- list.prod_append,
-        rw <- list.filter_append ,
-        rw <- range_to_append ,
-        linarith, linarith ,
-    end,
+    have h : primorial n = primorial m * (list.filter nat.prime (range_to (m+1) n)).prod := primorial_eq_primorial_mul_primes n m a,
     rw h , rw nat.mul_div_cancel_left ,
     apply zero_lt_primorial ,
 end
@@ -329,17 +362,50 @@ end
 
 lemma primorial_2m_plus_1_le_choose : ∀ (m : ℕ) ,
     m ≥ 2 →
-    primorial (2*m + 1) ≤ primorial (m+1) * (choose (2*m + 1) (m+1)) := sorry
+    primorial (2*m + 1) ≤ primorial (m+1) * (choose (2*m + 1) (m+1)) :=
+begin
+    intros ,
+    calc primorial (2*m + 1) =
+         primorial (m+1) * (primorial (2*m + 1) / primorial (m+1)) :
+    begin
+        rw nat.mul_div_cancel' ,
+        rw [primorial_eq_primorial_mul_primes (2*m+1) (m+1)] , simp ,
+        linarith ,
+    end
+    ... ≤ primorial (m+1) * (choose (2*m + 1) (m+1)) :
+    begin
+        apply nat.mul_le_mul_left , apply primorial_ratio_le_choose , assumption ,
+    end
+end
 
 lemma finset_sum_finset_range_eq_sum_range : ∀ (f: ℕ → ℕ) (n : ℕ) ,
-    finset.sum (finset.range n) f = ((list.range n).map f).sum := sorry
+    finset.sum (finset.range n) f = ((list.range n).map f).sum :=
+begin
+    intros , induction n , simp , rw[list.range] , rw [list.range_core] ,
+    simp ,
+    
+    have h1 : list.sum (list.map f (list.range (nat.succ n_n)))
+            = list.sum (list.map f (list.range n_n)) + f n_n :=
+        begin
+            rw [list.range_concat] , simp ,
+        end,
+    have h2 : finset.sum (finset.range (nat.succ n_n)) f
+            = finset.sum (finset.range n_n) f + f n_n :=
+        begin
+            rw [finset.sum_range_succ] , rw nat.add_comm ,
+        end,
+    rw h1 , rw h2 , rw n_ih ,
+end
 
 lemma choose_2m_plus_1_le_power_2 : ∀ (m : ℕ) ,
     choose (2*m + 1) (m+1) ≤ 2^(2*m) :=
 begin
     intros ,
     have t := (
-        calc 2 * 2^(2*m) = 2^(2*m+1) : sorry
+        calc 2 * 2^(2*m) = 2^(2*m+1) :
+            begin
+                rw nat.pow_add , norm_num , ring , 
+            end
         ... = ((1:ℕ) + (1:ℕ))^(2*m+1) : by simp
     ),
     have h := add_pow 1 1 (2*m+1) , simp at h ,
@@ -350,7 +416,15 @@ begin
     have l : list.range (nat.succ (1 + 2 * m)) =
         list.range' 0 m ++
         list.range' m 2 ++
-        list.range' (m+2) m := sorry ,
+        list.range' (m+2) m :=
+        begin
+            have t1 : list.range' m 2 = list.range' (0+m) 2 := by simp , rw t1 ,
+            rw [list.range_eq_range'] , rw [list.range'_append] ,
+            have t2 : list.range' (m + 2) m = list.range' (0 + (2 + m)) m := by simp , rw t2 ,
+            rw [list.range'_append] , rw [nat.succ_eq_add_one] ,
+            have t3 : (1 + 2 * m + 1) = (m + (2 + m)) := by ring,
+            rw t3 ,
+        end ,
     rw l at t ,
     rw [list.map_append, list.map_append, list.sum_append, list.sum_append] at t , 
     have t' : 2 * 2 ^ (2 * m) ≥ 
@@ -358,7 +432,15 @@ begin
     clear t,
     simp at t' ,
 
-    have q : choose (1 + 2 * m) m = choose (1 + 2 * m) (m+1) := sorry ,
+    have q : choose (1 + 2 * m) m = choose (1 + 2 * m) (m+1) := 
+        begin
+            rw choose_eq_fact_div_fact , rw choose_eq_fact_div_fact ,
+            have t1 : (1 + 2 * m) = m + (m+1) := by ring,
+            rw t1 , rw nat.add_sub_cancel ,
+            rw [@nat.add_comm m (m+1)] , rw nat.add_sub_cancel ,
+            rw [@nat.mul_comm (nat.fact m) (nat.fact (m + 1))] ,
+            linarith , linarith ,
+        end ,
     rw q at t' , 
     have q' : choose (1 + 2 * m) (m + 1) + choose (1 + 2 * m) (m + 1) = 2 * choose (1 + 2 * m) (m + 1) := by ring ,
     rw q' at t' ,
@@ -398,8 +480,6 @@ begin
     apply nat.pow_le_pow_of_le_right , linarith ,
     linarith ,
 end
-
-local attribute [instance] nat.decidable_prime_1
 
 lemma primorial_bound_aux : ∀ (bound n : ℕ) ,
     n < bound →
@@ -467,7 +547,8 @@ lemma primorial_bound_aux : ∀ (bound n : ℕ) ,
                 contradiction ,
                 rw [list.filter] , 
             end ,
-        rw s , simp ,
+        rw s ,
+        simp ,
         have ih_bound : (2*m + 1 < bound) := by linarith ,
         have ih := primorial_bound_aux
             bound (2*m + 1) ih_bound (by linarith) ,
@@ -545,11 +626,47 @@ begin
         end
         ... < 2 : a_1
     ),
-    contradiction ,
+    linarith ,
 end
 
+lemma le_of_sqr_le_sqr : ∀ (n m : ℕ) ,
+    n*n ≤ m*m → n ≤ m :=
+begin
+    intros , by_contradiction , simp at a_1 , 
+    have h : m*m < n*n := nat.mul_self_lt_mul_self a_1 ,
+    linarith ,
+end
+
+lemma le_div_mul : ∀ (n m : ℕ) ,
+    m > 0 →
+    n ≤ (n / m + 1) * m := sorry
+
 lemma sqrt_le_2_3 : ∀ (n : ℕ) ,
-    468 ≤ n → nat.sqrt (2 * n) ≤ 2 * n / 3 := sorry
+    468 ≤ n → nat.sqrt (2 * n) ≤ 2 * n / 3 :=
+begin
+    intros , apply le_of_sqr_le_sqr ,
+    have h : (2*n / 3 ≥ 4) := begin
+            calc 2*n / 3 ≥ 2*468 / 3 :
+                begin
+                    apply nat.div_le_div_right ,
+                    apply nat.mul_le_mul_left , assumption ,
+                end
+            ... ≥ 4 : by norm_num
+        end ,
+    calc nat.sqrt (2 * n) * nat.sqrt (2 * n) ≤ (2*n) : nat.sqrt_le (2*n)
+    ... ≤ (2*n / 3 + 1) * 3 : le_div_mul (2*n) 3 (by linarith)
+    ... = (2*n / 3) * 3 + 3 : begin rw add_mul , simp , end
+    ... ≤ (2*n / 3) * 3 + (2*n / 3) : by linarith 
+    ... = (2*n / 3) * 4 :
+            begin
+                have q : 4 = 3+1 := by norm_num , rw q ,
+                rw mul_add, simp ,
+            end
+    ... ≤ (2 * n / 3) * (2 * n / 3) :
+            begin
+                apply nat.mul_le_mul_left , assumption ,
+            end
+end
 
 lemma p_le_2n_over_3 : ∀ (n p : ℕ) ,
     (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
@@ -581,11 +698,20 @@ begin
     },
 end
 
+lemma log_le_1_of_gt_sqrt : ∀ (n p : ℕ) ,
+    p > nat.sqrt n → log p n ≤ 1 := sorry
+
 lemma p_at_most_1_in_choose_of_gt_sqrt : ∀ (p n r : ℕ) ,
     nat.prime p → 
     p > nat.sqrt (2*n) →
     p ^ r ∣ choose (2*n) n →
-    r ≤ 1 := sorry
+    r ≤ 1 :=
+begin
+    intros ,
+    have h : r ≤ log p (2*n) := exp_le_log_of_dvd_choose (2*n) n p r a_2 ,
+    have j : log p (2*n) ≤ 1 := log_le_1_of_gt_sqrt (2*n) p a_1 ,
+    exact (nat.le_trans h j) ,
+end
 
 lemma factorize_choose_2n_n : ∀ (n : ℕ) ,
     (∀ (x : ℕ), nat.prime x → n < x → 2 * n < x) →
@@ -607,10 +733,6 @@ begin
     split , assumption ,
     rw prod_condition ,
 end
-
-lemma prod_le_prod : ∀ (l : list ℕ) (f g : ℕ → ℕ) ,
-    (∀ (x:ℕ) , x ∈ l → f x ≤ g x) → 
-    (l.map f).prod ≤ (l.map g).prod := sorry
 
 lemma prod_repeat_eq_pow : ∀ (a b : ℕ) ,
     list.prod (list.repeat a b) = a ^ b :=
@@ -735,7 +857,17 @@ lemma main_bound : ∀ (n : ℕ) ,
 
 lemma b_lt_c_of_ab_lt_c : ∀ (a b c : ℕ) ,
     a > 0 → 
-    a*b < c → b < c := sorry
+    a*b < c → b < c :=
+begin
+    intros , 
+    calc b = 1*b : by simp
+    ... ≤ a*b :
+        begin
+            apply nat.mul_le_mul_right ,
+            cases a , linarith , rw nat.succ_eq_add_one , linarith ,
+        end
+    ... < c : by assumption
+end
 
 /- copied from assignment 3, surprised I couldn't find this built-in? -/
 
@@ -809,7 +941,7 @@ begin
             primorial (2*n / 3) :
             begin
                 apply nat.mul_le_mul_left ,
-                exact (prime_bounds_2 n r r_divides) ,
+                exact (prime_bounds_2 n r a r_divides) ,
             end
     ... ≤ 2*n *
             (2*n) ^ (nat.sqrt (2*n)) *
@@ -840,6 +972,82 @@ end
 
 /- full bertrand's postulate -/
 
+lemma prime_2 : nat.prime 2 := dec_trivial
+lemma prime_3 : nat.prime 3 := dec_trivial
+lemma prime_5 : nat.prime 5 := dec_trivial
+lemma prime_7 : nat.prime 7 := dec_trivial
+lemma prime_13 : nat.prime 13 := dec_trivial
+lemma prime_23 : nat.prime 23 := dec_trivial
+lemma prime_43 : nat.prime 43 := dec_trivial
+lemma prime_83 : nat.prime 83 := dec_trivial
+lemma prime_163 : nat.prime 163 := sorry 
+lemma prime_317 : nat.prime 317 := sorry
+lemma prime_631 : nat.prime 631 := sorry
+
 theorem bertrands_postulate : ∀ (n : ℕ) ,
     n ≥ 1 →
-    ∃ p , nat.prime p ∧ n < p ∧ p ≤ 2*n := sorry
+    ∃ p , nat.prime p ∧ n < p ∧ p ≤ 2*n :=
+begin
+    intros ,
+    by_cases (n < 2) , existsi 2 ,
+        exact (and.intro prime_2 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _2_le_n ,
+
+    by_cases (n < 3) , existsi 3 ,
+        exact (and.intro prime_3 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _3_le_n ,
+
+    by_cases (n < 5) , existsi 5 ,
+        exact (and.intro prime_5 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _5_le_n ,
+
+    by_cases (n < 7) , existsi 7 ,
+        exact (and.intro prime_7 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _7_le_n ,
+
+    by_cases (n < 13) , existsi 13 ,
+        exact (and.intro prime_13 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _13_le_n ,
+
+    by_cases (n < 23) , existsi 23 ,
+        exact (and.intro prime_23 (and.intro (by assumption) (by linarith))) ,
+    simp at h , rename h _23_le_n ,
+
+    by_cases (n < 43) , existsi 43 ,
+        have p_le_2n : 43 ≤ 2*n :=
+            (calc 43 ≤ 2*23 : by norm_num
+            ... ≤ 2*n : begin apply nat.mul_le_mul_left , assumption end),
+        exact (and.intro prime_43 (and.intro (by assumption) (by assumption))) ,
+    simp at h , rename h _43_le_n ,
+
+    by_cases (n < 83) , existsi 83 ,
+        have p_le_2n : 83 ≤ 2*n :=
+            (calc 83 ≤ 2*43 : by norm_num
+            ... ≤ 2*n : begin apply nat.mul_le_mul_left , assumption end),
+        exact (and.intro prime_83 (and.intro (by assumption) (by assumption))) ,
+    simp at h , rename h _83_le_n ,
+
+    by_cases (n < 163) , existsi 163 ,
+        have p_le_2n : 163 ≤ 2*n :=
+            (calc 163 ≤ 2*83 : by norm_num
+            ... ≤ 2*n : begin apply nat.mul_le_mul_left , assumption end),
+        exact (and.intro prime_163 (and.intro (by assumption) (by assumption))) ,
+    simp at h , rename h _163_le_n ,
+
+    by_cases (n < 317) , existsi 317 ,
+        have p_le_2n : 317 ≤ 2*n :=
+            (calc 317 ≤ 2*163 : by norm_num
+            ... ≤ 2*n : begin apply nat.mul_le_mul_left , assumption end),
+        exact (and.intro prime_317 (and.intro (by assumption) (by assumption))) ,
+    simp at h , rename h _317_le_n ,
+
+    by_cases (n < 631) , existsi 631 ,
+        have p_le_2n : 631 ≤ 2*n :=
+            (calc 631 ≤ 2*317 : by norm_num
+            ... ≤ 2*n : begin apply nat.mul_le_mul_left , assumption end),
+        exact (and.intro prime_631 (and.intro (by assumption) (by assumption))) ,
+    simp at h , rename h _631_le_n ,
+
+    have t := (calc 468 ≤ 631 : by norm_num ... ≤ n : by assumption) ,
+    exact (bertrands_postulate_main n t) ,
+end
